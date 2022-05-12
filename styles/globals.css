@@ -16,6 +16,9 @@ body {
 
   /* Text color */
   color: white;
+
+  /* Disable text selection */
+  user-select: none;
 }
 * {
   box-sizing: border-box;
