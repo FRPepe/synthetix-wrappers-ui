@@ -6,9 +6,9 @@ body {
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 
   /* Background image */
-  background-image: url('/images/background.svg');
+  background-image: url('../assets/background.svg');
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: 100%;
 
   /* Background color */
   background-color: rgba(13, 13, 13, 0.82);
@@ -17,12 +17,6 @@ body {
   /* Text color */
   color: white;
 }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
 * {
   box-sizing: border-box;
 }
