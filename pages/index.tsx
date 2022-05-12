@@ -2,6 +2,7 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 
 import Header from '../sections/Header';
+import Footer from '../sections/Footer';
 
 const HomePage = () => {
   return (
@@ -14,6 +15,7 @@ const HomePage = () => {
 
       <main className={styles.main}>
         <Header />
+        <Footer />
       </main>
     </div>
   )
