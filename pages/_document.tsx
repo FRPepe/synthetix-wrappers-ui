@@ -1,15 +1,17 @@
-import Document, { Html, Head, Main, NextScript } from 'next/document';
+import { AppPropsType, AppType } from 'next/dist/shared/lib/utils';
+import Document, { DocumentContext } from 'next/document';
+import { NextRouter } from 'next/router';
 import { ServerStyleSheet } from 'styled-components';
 
 export default class MyDocument extends Document {
-    static async getInitialProps(ctx: any) {
+    static async getInitialProps(ctx: DocumentContext): Promise<any> {
         const sheet = new ServerStyleSheet();
         const originalRenderPage = ctx.renderPage;
 
         try {
             ctx.renderPage = () =>
                 originalRenderPage({
-                    enhanceApp: (App: any) => (props: any) =>
+                    enhanceApp: (App: AppType) => (props: AppPropsType<NextRouter, {}>) =>
                         sheet.collectStyles(<App {...props} />),
                 })
 
