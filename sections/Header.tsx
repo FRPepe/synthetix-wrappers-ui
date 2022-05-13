@@ -4,11 +4,11 @@ import Image from 'next/image';
 
 import Button from '../components/Button';
 
-import SynthetixLogo from '../assets/synthetix.svg';
-import EthereumLogo from '../assets/ethereum.svg';
-import OptimismLogo from '../assets/optimism.svg';
-import DownArrow from '../assets/down-arrow.svg';
-import BadgeLive from '../assets/badge-live.svg';
+import SynthetixLogo from '../assets/logos/synthetix.svg';
+import EthereumLogo from '../assets/logos/ethereum.svg';
+import OptimismLogo from '../assets/logos/optimism.svg';
+import DownArrow from '../assets/utils/down-arrow.svg';
+import BadgeLive from '../assets/utils/badge-live.svg';
 
 const Header: FC = () => {
     return (
