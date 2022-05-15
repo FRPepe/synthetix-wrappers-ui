@@ -1,314 +1,307 @@
-import { FC } from 'react';
-import styled, { css } from 'styled-components';
-import Image from 'next/image';
+import { FC } from "react";
+import styled, { css } from "styled-components";
+import Image from "next/image";
 
-import Button from '../../components/Button';
+import Button from "../../components/Button";
 
-import Gear from '../../assets/utils/gear.svg';
-import Arrows from '../../assets/utils/arrows.svg';
-import EthereumLogo from '../../assets/logos/ethereum.svg';
-import sLUSDLogo from '../../assets/synths/sLUSD.svg';
-import DownArrowSmall from '../../assets/utils/down-arrow-small.svg';
+import Gear from "../../assets/utils/gear.svg";
+import Arrows from "../../assets/utils/arrows.svg";
+import EthereumLogo from "../../assets/logos/ethereum.svg";
+import sLUSDLogo from "../../assets/synths/sLUSD.svg";
+import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
 
 const Wrappr: FC = () => {
-    /* Wrappr */
-    const balance = '129,937,738.0838';
+  /* Wrappr */
+  const balance = "129,937,738.0838";
 
-    /* Capacity */
-    const capacityUtilised = '80,000';
-    const maxCapacity = '200,000';
-    const capacityPercentage = parseInt(capacityUtilised, 10) / parseInt(maxCapacity, 10) * 100;
+  /* Capacity */
+  const capacityUtilised = "80,000";
+  const maxCapacity = "200,000";
+  const capacityPercentage =
+    (parseInt(capacityUtilised, 10) / parseInt(maxCapacity, 10)) * 100;
 
-    return(
-        <Container>
-            <SelectorContainer>
-            </SelectorContainer>
-            <WrapprContainerColumn>
-                <WrapprContainerRow>
-                    <span>Wrappr</span>
-                    <GearButton
-                        size='sm'
-                        onClick={() => console.log('You clicked on the gear button!')}
-                    >
-                        <Image src={Gear} priority={true}/>
-                    </GearButton>
-                </WrapprContainerRow>
-                <BlackContainer>
-                    <BlackContainerRow>
-                        <CurrencySelectoDropdown>
-                            <CurrencySelectorButton
-                                onClick={() => console.log('You clicked on the first currency selector!')}
-                            >
-                                <StyledCurrencyContainer>
-                                    <Image src={EthereumLogo} priority={true}/>
-                                    <span>ETH</span>
-                                    <Image src={DownArrowSmall} priority={true}/>
-                                </StyledCurrencyContainer>
-                            </CurrencySelectorButton>
-                            <CurrencySelectorContainer>
-                                <CurrencyContainer>
-                                    <Image src={sLUSDLogo} priority={true}/>
-                                    <span>LUSD</span>
-                                </CurrencyContainer>
-                                <CurrencyContainer
-                                    active={true}
-                                >
-                                    <Image src={EthereumLogo} priority={true}/>
-                                    <span>ETH</span>
-                                </CurrencyContainer>
-                            </CurrencySelectorContainer>
-                        </CurrencySelectoDropdown>
-                        <NumericInput
-                            type='text'
-                            placeholder='0.0'
-                        />
-                    </BlackContainerRow>
-                    <span>Balance: {balance}</span>
-                </BlackContainer>
-                <ArrowButton
-                    onClick={() => console.log('You clicked on the double arrows button!')}
-                >
-                    <Image src={Arrows} priority={true}/>
-                </ArrowButton>
-                <BlackContainer>
-                </BlackContainer>
-                <ActionButton
-                    onClick={() => console.log('You clicked on the action button!')}
-                >
-                    <span>Select amount to wrap</span>
-                </ActionButton>
-            </WrapprContainerColumn>
-            <CapacityContainer>
-                <TitleContainer>
-                    <span>Capacity</span>
-                </TitleContainer>
-                <GaugeContainer>
-                    <GaugeProgress
-                        percentage={capacityPercentage}
-                    />
-                </GaugeContainer>
-                <CapacityDescriptionContainer>
-                    <ColumnContainer>
-                        <span className='bold'>Utilised</span>
-                        <span>{capacityUtilised}</span>
-                    </ColumnContainer>
-                    <ColumnContainer>
-                        <span className='bold'>Max Capacity</span>
-                        <span>{maxCapacity}</span>
-                    </ColumnContainer>
-                </CapacityDescriptionContainer>
-            </CapacityContainer>
-        </Container>
-    );
+  return (
+    <Container>
+      <SelectorContainer></SelectorContainer>
+      <WrapprContainerColumn>
+        <WrapprContainerRow>
+          <span>Wrappr</span>
+          <GearButton
+            size="sm"
+            onClick={() => console.log("You clicked on the gear button!")}
+          >
+            <Image src={Gear} priority={true} />
+          </GearButton>
+        </WrapprContainerRow>
+        <BlackContainer>
+          <BlackContainerRow>
+            <CurrencySelectoDropdown>
+              <CurrencySelectorButton
+                onClick={() =>
+                  console.log("You clicked on the first currency selector!")
+                }
+              >
+                <StyledCurrencyContainer>
+                  <Image src={EthereumLogo} priority={true} />
+                  <span>ETH</span>
+                  <Image src={DownArrowSmall} priority={true} />
+                </StyledCurrencyContainer>
+              </CurrencySelectorButton>
+              <CurrencySelectorContainer>
+                <CurrencyContainer>
+                  <Image src={sLUSDLogo} priority={true} />
+                  <span>LUSD</span>
+                </CurrencyContainer>
+                <CurrencyContainer active={true}>
+                  <Image src={EthereumLogo} priority={true} />
+                  <span>ETH</span>
+                </CurrencyContainer>
+              </CurrencySelectorContainer>
+            </CurrencySelectoDropdown>
+            <NumericInput type="text" placeholder="0.0" />
+          </BlackContainerRow>
+          <span>Balance: {balance}</span>
+        </BlackContainer>
+        <ArrowButton
+          onClick={() =>
+            console.log("You clicked on the double arrows button!")
+          }
+        >
+          <Image src={Arrows} priority={true} />
+        </ArrowButton>
+        <BlackContainer></BlackContainer>
+        <ActionButton
+          onClick={() => console.log("You clicked on the action button!")}
+        >
+          <span>Select amount to wrap</span>
+        </ActionButton>
+      </WrapprContainerColumn>
+      <CapacityContainer>
+        <TitleContainer>
+          <span>Capacity</span>
+        </TitleContainer>
+        <GaugeContainer>
+          <GaugeProgress percentage={capacityPercentage} />
+        </GaugeContainer>
+        <CapacityDescriptionContainer>
+          <ColumnContainer>
+            <span className="bold">Utilised</span>
+            <span>{capacityUtilised}</span>
+          </ColumnContainer>
+          <ColumnContainer>
+            <span className="bold">Max Capacity</span>
+            <span>{maxCapacity}</span>
+          </ColumnContainer>
+        </CapacityDescriptionContainer>
+      </CapacityContainer>
+    </Container>
+  );
 };
 
 const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 30px 40px 0px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 30px 40px 0px 40px;
 `;
 
 const SelectorContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 4px 12px 4px 4px;
-    gap: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 4px 12px 4px 4px;
+  gap: 10px;
 
-    /* Basic style */
-    height: 44px;
-    width: 210px;
+  /* Basic style */
+  height: 44px;
+  width: 210px;
 
-    /* Background */
-    background:
-        linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-        linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
+  /* Background */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3d464c -36.37%, #131619 62.81%);
 
-    /* Border */
-    border: 1px solid rgba(130, 130, 149, 0.3);
-    border-radius: 35px;
+  /* Border */
+  border: 1px solid rgba(130, 130, 149, 0.3);
+  border-radius: 35px;
 `;
 
-
 const WrapprContainerColumn = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 
-    /* Basic style */
-    height: 400px;
-    width: 518px;
-    margin-top: 25px;
+  /* Basic style */
+  height: 400px;
+  width: 518px;
+  margin-top: 25px;
 
-    /* Background */
-    background:
-        linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-        linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
+  /* Background */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3d464c -36.37%, #131619 62.81%);
 
-    /* Border */
-    border: 2px solid #000000;
-    border-radius: 20px;
+  /* Border */
+  border: 2px solid #000000;
+  border-radius: 20px;
 
-    /* Shadow */
-    box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
+  /* Shadow */
+  box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
 `;
 
 const WrapprContainerRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    padding: 30px 30px 0px 30px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 30px 30px 0px 30px;
 
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 700;
-    font-size: 32px;
-    line-height: 35px;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 35px;
 `;
 
 const BlackContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 10px 20px;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10px 20px;
+  gap: 4px;
 
-    width: 464px;
-    height: 79px;
+  width: 464px;
+  height: 79px;
 
-    background: #000000;
-    border-radius: 4px;
+  background: #000000;
+  border-radius: 4px;
 
-    span {
-        /* Text */
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 400;
-        font-size: 12px;
-        line-height: 150%;
-        color: #828295;
-    }
+  span {
+    /* Text */
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 150%;
+    color: #828295;
+  }
 `;
 
 const BlackContainerRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
 
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 700;
-    font-size: 24px;
-    line-height: 26px;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 26px;
 `;
 
 const CurrencySelectorButton = styled(Button)`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 
-    width: 138px;
-    height: 37px;
+  width: 138px;
+  height: 37px;
 
-    /* Border */
-    border: 1px solid rgba(130, 130, 149, 0.3);
-    border-radius: 8px;
+  /* Border */
+  border: 1px solid rgba(130, 130, 149, 0.3);
+  border-radius: 8px;
 
-    /* Remove background color */
-    background: none;
+  /* Remove background color */
+  background: none;
 `;
 
-const CurrencyContainer = styled.div<{active?: boolean}>`
-    display: flex;
-    flex-direction: row;
-    justify-content: left;
-    align-items: center;
-    gap: 8px;
+const CurrencyContainer = styled.div<{ active?: boolean }>`
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  gap: 8px;
 
-    padding: 0px 10px;
-    width: 100%;
-    height: 40px;
+  padding: 0px 10px;
+  width: 100%;
+  height: 40px;
 
-    ${(props) =>
-        props.active &&
-        css`
-            background: rgba(130, 130, 149, 0.3);
-            border-radius: 4px;
-        `}
+  ${(props) =>
+    props.active &&
+    css`
+      background: rgba(130, 130, 149, 0.3);
+      border-radius: 4px;
+    `}
 
-    /* Text */
+  /* Text */
     span {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 600;
-        font-size: 14px;
-        line-height: 20px;
-        color: #FFFFFF;
-    }
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: #ffffff;
+  }
 `;
 
 const StyledCurrencyContainer = styled(CurrencyContainer)`
-    justify-content: space-between;
+  justify-content: space-between;
 
-    /* Text */
-    span {
-        font-weight: 700;
-        font-size: 24px;
-        line-height: 29px;
-    }
+  /* Text */
+  span {
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 29px;
+  }
 `;
 
 const CurrencySelectorContainer = styled.div`
-    /* Hide the dropdown menu by default */
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    padding: 8px;
+  /* Hide the dropdown menu by default */
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
 
-    /* Basic style */
-    height: 104px;
-    width: 139px;
+  /* Basic style */
+  height: 104px;
+  width: 139px;
 
-    /* Background */
-    background:
-        linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-        linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
-    
-    /* Border */
-    border: 1px solid #8282954D;
-    border-radius: 4px;
+  /* Background */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3d464c -36.37%, #131619 62.81%);
 
-    /* Shadow */
-    box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
+  /* Border */
+  border: 1px solid #8282954d;
+  border-radius: 4px;
+
+  /* Shadow */
+  box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
 `;
 
 const CurrencySelectoDropdown = styled.div`
-    flex-direction: column;
-    gap: 8px;
+  flex-direction: column;
+  gap: 8px;
 
-    /* Reveal the dropdown menu when the button is clicked and then if the dropdown menu is hovered */
-    &:hover, > ${CurrencySelectorContainer}:hover {
-        display: flex;
-        
-        > ${CurrencySelectorContainer} {
-            position: absolute;
-            display: flex;
-            margin-top: 44px;
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 12px 8px 8px;
-            gap: 14px;
-        }
+  /* Reveal the dropdown menu when the button is clicked and then if the dropdown menu is hovered */
+  &:hover,
+  > ${CurrencySelectorContainer}:hover {
+    display: flex;
+
+    > ${CurrencySelectorContainer} {
+      position: absolute;
+      display: flex;
+      margin-top: 44px;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 12px 8px 8px;
+      gap: 14px;
     }
+  }
 `;
 
 const NumericInput = styled.input`
@@ -337,143 +330,141 @@ const NumericInput = styled.input`
 `;
 
 const GearButton = styled(Button)`
-    padding-top: 12px;
+  padding-top: 12px;
 `;
 
 const ArrowButton = styled.button`
-    padding: 10px;
-    
-    background: #000000;
-    border: 2px solid #000000;
-    border-radius: 100px;
+  padding: 10px;
 
-    &:hover {
-        background: #FFFFFF;
-    }
+  background: #000000;
+  border: 2px solid #000000;
+  border-radius: 100px;
 
-    &:active {
-        border: 2px solid #FFFFFF;
-    }
+  &:hover {
+    background: #ffffff;
+  }
+
+  &:active {
+    border: 2px solid #ffffff;
+  }
 `;
 
 const ActionButton = styled(Button)`
-    width: 464px;
-    height: 40px;
+  width: 464px;
+  height: 40px;
 
-    background: rgba(86, 86, 99, 0.6);
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+  background: rgba(86, 86, 99, 0.6);
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
 
-    span {
-        color: #565663;
-    }
+  span {
+    color: #565663;
+  }
 `;
 
 const CapacityContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 
-    /* Basic style */
-    height: 150px;
-    width: 518px;
-    margin-top: 24px;
-    padding: 15px;
+  /* Basic style */
+  height: 150px;
+  width: 518px;
+  margin-top: 24px;
+  padding: 15px;
 
-    /* Background */
-    background:
-        linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-        linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
+  /* Background */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3d464c -36.37%, #131619 62.81%);
 
-    /* Border */
-    border: 2px solid #000000;
-    border-radius: 20px;
+  /* Border */
+  border: 2px solid #000000;
+  border-radius: 20px;
 
-    /* Shadow */
-    box-shadow: 18px 18px 36px rgba(0, 0, 0, 0.25);
+  /* Shadow */
+  box-shadow: 18px 18px 36px rgba(0, 0, 0, 0.25);
 `;
 
 const TitleContainer = styled.div`
-    width: 100%;
-    text-align: center;
-    
-    /* Text */
-    span {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 700;
-        font-size: 24px;
-        line-height: 26px;
-        color: #FFFFFF;
-    }
+  width: 100%;
+  text-align: center;
+
+  /* Text */
+  span {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 26px;
+    color: #ffffff;
+  }
 `;
 
 const ColumnContainer = styled.div`
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 
-    span {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 400;
-        font-size: 14px;
-        line-height: 21px;
-    }
+  span {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+  }
 
-    .align-right {
-        text-align: right;
-    }
+  .align-right {
+    text-align: right;
+  }
 
-    .bold {
-        font-weight: 700;
-    }
+  .bold {
+    font-weight: 700;
+  }
 `;
 
 const CapacityDescriptionContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 0px 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0px 10px;
 
-    & ${ColumnContainer}:nth-child(2) {
-        text-align: right;
-    }
+  & ${ColumnContainer}:nth-child(2) {
+    text-align: right;
+  }
 `;
 
 const GaugeContainer = styled.div`
-    width: 100%;
-    height: 26px;
+  width: 100%;
+  height: 26px;
 
-    /* Border */
-    border: 1px solid transparent;
-    background:
-        linear-gradient(#000000 0 0) padding-box,
-        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%) border-box;
-    border-radius: 80px;
+  /* Border */
+  border: 1px solid transparent;
+  background: linear-gradient(#000000 0 0) padding-box,
+    linear-gradient(73.6deg, #85ffc4 2.11%, #5cc6ff 90.45%) border-box;
+  border-radius: 80px;
 `;
 
-const GaugeProgress = styled.div<{percentage: number}>`
-    width: 0%;
-    height: 12px;
-    margin: 6px 6px;
-    
-    background:
-        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%) padding-box,
-        linear-gradient(#000000 0 0) border-box;
-    border-radius: 50px 0px 0px 50px;
+const GaugeProgress = styled.div<{ percentage: number }>`
+  width: 0%;
+  height: 12px;
+  margin: 6px 6px;
 
-    ${(props) =>
-        props.percentage >= 0 &&
-        props.percentage < 100 &&
-        css`
-            width: ${props.percentage * 97 / 100}%;
-        `}
-    
-    ${(props) =>
-        props.percentage >= 100 &&
-        css`
-            width: 97%;
-            border-radius: 50px 50px 50px 50px;
-        `}
+  background: linear-gradient(73.6deg, #85ffc4 2.11%, #5cc6ff 90.45%)
+      padding-box,
+    linear-gradient(#000000 0 0) border-box;
+  border-radius: 50px 0px 0px 50px;
+
+  ${(props) =>
+    props.percentage >= 0 &&
+    props.percentage < 100 &&
+    css`
+      width: ${(props.percentage * 97) / 100}%;
+    `}
+
+  ${(props) =>
+    props.percentage >= 100 &&
+    css`
+      width: 97%;
+      border-radius: 50px 50px 50px 50px;
+    `}
 `;
 
 export default Wrappr;

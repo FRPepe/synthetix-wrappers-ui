@@ -6,7 +6,7 @@ body {
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 
   /* Background image */
-  background-image: url('../assets/background/background.svg');
+  background-image: url("../assets/background/background.svg");
   background-repeat: no-repeat;
   background-size: 100%;
 
