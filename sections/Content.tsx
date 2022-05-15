@@ -71,6 +71,24 @@ const Wrappr: FC = () => {
                 </ActionButton>
             </WrapprContainerColumn>
             <CapacityContainer>
+                <TitleContainer>
+                    <span>Capacity</span>
+                </TitleContainer>
+                <GaugeContainer>
+                    <GaugeProgress
+                        percentage={40}
+                    />
+                </GaugeContainer>
+                <CapacityDescriptionContainer>
+                    <ColumnContainer>
+                        <span className='bold'>Utilised</span>
+                        <span>80,000</span>
+                    </ColumnContainer>
+                    <ColumnContainer>
+                        <span className='bold'>Max Capacity</span>
+                        <span>200,000</span>
+                    </ColumnContainer>
+                </CapacityDescriptionContainer>
             </CapacityContainer>
         </Container>
     );
@@ -343,10 +361,15 @@ const ActionButton = styled(Button)`
 `;
 
 const CapacityContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
     /* Basic style */
-    height: 140px;
+    height: 150px;
     width: 518px;
     margin-top: 24px;
+    padding: 15px;
 
     /* Background */
     background:
@@ -359,6 +382,90 @@ const CapacityContainer = styled.div`
 
     /* Shadow */
     box-shadow: 18px 18px 36px rgba(0, 0, 0, 0.25);
+`;
+
+const TitleContainer = styled.div`
+    width: 100%;
+    text-align: center;
+    
+    /* Text */
+    span {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        font-size: 24px;
+        line-height: 26px;
+        color: #FFFFFF;
+    }
+`;
+
+const ColumnContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+
+    span {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 21px;
+    }
+
+    .align-right {
+        text-align: right;
+    }
+
+    .bold {
+        font-weight: 700;
+    }
+`;
+
+const CapacityDescriptionContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0px 10px;
+
+    & ${ColumnContainer}:nth-child(2) {
+        text-align: right;
+    }
+`;
+
+const GaugeContainer = styled.div`
+    width: 100%;
+    height: 26px;
+
+    /* Border */
+    border: 1px solid transparent;
+    background:
+        linear-gradient(#000000 0 0) padding-box,
+        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%) border-box;
+    border-radius: 80px;
+`;
+
+const GaugeProgress = styled.div<{percentage: number}>`
+    width: 0%;
+    height: 12px;
+    margin: 6px 6px;
+    
+    background:
+        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%) padding-box,
+        linear-gradient(#000000 0 0) border-box;
+    border-radius: 50px 0px 0px 50px;
+
+    ${(props) =>
+        props.percentage >= 0 &&
+        props.percentage < 100 &&
+        css`
+            width: ${props.percentage * 97 / 100}%;
+        `}
+    
+    ${(props) =>
+        props.percentage >= 100 &&
+        css`
+            width: 97%;
+            border-radius: 50px 50px 50px 50px;
+        `}
 `;
 
 export default Wrappr;
