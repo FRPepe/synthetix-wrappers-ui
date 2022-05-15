@@ -2,13 +2,13 @@ import { FC } from 'react';
 import styled, { css } from 'styled-components';
 import Image from 'next/image';
 
-import Button from '../components/Button';
+import Button from '../../components/Button';
 
-import SynthetixLogo from '../assets/logos/synthetix.svg';
-import EthereumLogo from '../assets/logos/ethereum.svg';
-import OptimismLogo from '../assets/logos/optimism.svg';
-import DownArrow from '../assets/utils/down-arrow.svg';
-import BadgeLive from '../assets/utils/badge-live.svg';
+import SynthetixLogo from '../../assets/logos/synthetix.svg';
+import EthereumLogo from '../../assets/logos/ethereum.svg';
+import OptimismLogo from '../../assets/logos/optimism.svg';
+import DownArrow from '../../assets/utils/down-arrow.svg';
+import BadgeLive from '../../assets/utils/badge-live.svg';
 
 type HeaderProps = {
     onConnect: () => void;

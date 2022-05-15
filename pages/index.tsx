@@ -4,10 +4,10 @@ import styled, { css } from 'styled-components';
 
 import styles from '../styles/Home.module.css';
 
-import Header from '../sections/Header';
-import Content from '../sections/Content';
-import Footer from '../sections/Footer';
-import Wallet from '../sections/WalletOverlay';
+import Header from '../sections/home/Header';
+import Content from '../sections/home/Content';
+import Footer from '../sections/home/Footer';
+import Wallet from '../sections/home/WalletOverlay';
 
 const HomePage = () => {
   const [showWalletOverlay, setShowWalletOverlay] = useState(false);

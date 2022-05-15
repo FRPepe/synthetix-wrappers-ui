@@ -2,13 +2,13 @@ import { FC, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
 
-import Button from '../components/Button';
+import Button from '../../components/Button';
 
-import CrossIcon from '../assets/utils/cross.svg';
-import MetamaskIcon from '../assets/wallets/metamask.svg';
-import ConnectMobileIcon from '../assets/wallets/connect-mobile.svg';
-import LedgerIcon from '../assets/wallets/ledger.svg';
-import TrezorIcon from '../assets/wallets/trezor.svg';
+import CrossIcon from '../../assets/utils/cross.svg';
+import MetamaskIcon from '../../assets/wallets/metamask.svg';
+import ConnectMobileIcon from '../../assets/wallets/connect-mobile.svg';
+import LedgerIcon from '../../assets/wallets/ledger.svg';
+import TrezorIcon from '../../assets/wallets/trezor.svg';
 
 type WalletOverlayProps = {
     display: boolean;

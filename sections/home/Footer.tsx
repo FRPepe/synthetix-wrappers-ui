@@ -1,17 +1,21 @@
+import Link from 'next/link';
+
 import { FC } from 'react';
 import styled from 'styled-components';
 
-import Button from '../components/Button';
+import Button from '../../components/Button';
 
 const Footer: FC = () => {
     return (
         <Container>
-            <SquareButton
-                size='sm'
-                onClick={() => console.log('You clicked on the question mark button!')}
-            >
-                <span>?</span>
-            </SquareButton>
+            <Link href="/faq">
+                <SquareButton
+                    size='sm'
+                    onClick={() => console.log('You clicked on the question mark button!')}
+                >
+                    <span>?</span>
+                </SquareButton>
+            </Link>
         </Container>
     );
 };

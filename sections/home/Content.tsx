@@ -2,15 +2,23 @@ import { FC } from 'react';
 import styled, { css } from 'styled-components';
 import Image from 'next/image';
 
-import Button from '../components/Button';
+import Button from '../../components/Button';
 
-import Gear from '../assets/utils/gear.svg';
-import Arrows from '../assets/utils/arrows.svg';
-import EthereumLogo from '../assets/logos/ethereum.svg';
-import sLUSDLogo from '../assets/synths/sLUSD.svg';
-import DownArrowSmall from '../assets/utils/down-arrow-small.svg';
+import Gear from '../../assets/utils/gear.svg';
+import Arrows from '../../assets/utils/arrows.svg';
+import EthereumLogo from '../../assets/logos/ethereum.svg';
+import sLUSDLogo from '../../assets/synths/sLUSD.svg';
+import DownArrowSmall from '../../assets/utils/down-arrow-small.svg';
 
 const Wrappr: FC = () => {
+    /* Wrappr */
+    const balance = '129,937,738.0838';
+
+    /* Capacity */
+    const capacityUtilised = '80,000';
+    const maxCapacity = '200,000';
+    const capacityPercentage = parseInt(capacityUtilised, 10) / parseInt(maxCapacity, 10) * 100;
+
     return(
         <Container>
             <SelectorContainer>
@@ -55,7 +63,7 @@ const Wrappr: FC = () => {
                             placeholder='0.0'
                         />
                     </BlackContainerRow>
-                    <span>Balance: 129,937,738.0838</span>
+                    <span>Balance: {balance}</span>
                 </BlackContainer>
                 <ArrowButton
                     onClick={() => console.log('You clicked on the double arrows button!')}
@@ -76,17 +84,17 @@ const Wrappr: FC = () => {
                 </TitleContainer>
                 <GaugeContainer>
                     <GaugeProgress
-                        percentage={40}
+                        percentage={capacityPercentage}
                     />
                 </GaugeContainer>
                 <CapacityDescriptionContainer>
                     <ColumnContainer>
                         <span className='bold'>Utilised</span>
-                        <span>80,000</span>
+                        <span>{capacityUtilised}</span>
                     </ColumnContainer>
                     <ColumnContainer>
                         <span className='bold'>Max Capacity</span>
-                        <span>200,000</span>
+                        <span>{maxCapacity}</span>
                     </ColumnContainer>
                 </CapacityDescriptionContainer>
             </CapacityContainer>
