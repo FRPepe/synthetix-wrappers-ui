@@ -44,7 +44,6 @@ const Home = styled.div<{showWalletOverlay: boolean}>`
   ${(props) =>
       props.showWalletOverlay &&
       css`
-        position: relative;
         filter: blur(3px);
         background: rgba(13, 13, 13, 0.82);
       `}>
