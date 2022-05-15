@@ -199,10 +199,6 @@ const CurrencySelectorButton = styled(Button)`
 
     /* Remove background color */
     background: none;
-
-    &:hover {
-        border-color: #FFFFFF;
-    }
 `;
 
 const CurrencyContainer = styled.div<{active?: boolean}>`

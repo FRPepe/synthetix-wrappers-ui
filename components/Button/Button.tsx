@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components';
 
 type ButtonProps = {
-	size?: 'sm';
+	size?: 'xs' | 'sm';
 };
 
 const Button = styled.button<ButtonProps>`
@@ -10,7 +10,16 @@ const Button = styled.button<ButtonProps>`
     height: 44px;
     width: 160px;
 
-    /* Small size styling */
+    /* Extra-small size */
+    ${(props) =>
+        props.size === 'xs' &&
+        css`
+            padding: 10px;
+            width: 34px;
+            height: 34px;
+        `}
+
+    /* Small size */
     ${(props) =>
         props.size === 'sm' &&
         css`

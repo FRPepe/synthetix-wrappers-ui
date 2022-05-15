@@ -10,7 +10,13 @@ import OptimismLogo from '../assets/logos/optimism.svg';
 import DownArrow from '../assets/utils/down-arrow.svg';
 import BadgeLive from '../assets/utils/badge-live.svg';
 
-const Header: FC = () => {
+type HeaderProps = {
+    onConnect: () => void;
+};
+
+const Header: FC<HeaderProps> = ({
+    onConnect,
+}) => {
     return (
         <Container>
             <Image src={SynthetixLogo} priority={true}/>
@@ -18,7 +24,6 @@ const Header: FC = () => {
                 <NetworkContainerDropdown>
                     <Button
                         onClick={() => console.log('You clicked on the network button!')}
-                        className="networkBtn"
                     >
                         <NetworkContainer>
                             <Image src={EthereumLogo} priority={true}/>
@@ -40,7 +45,7 @@ const Header: FC = () => {
                     </NetworkSelectorContainer>
                 </NetworkContainerDropdown>
                 <ConnectWalletButton
-                    onClick={() => console.log('You clicked on the wallet button!')}
+                    onClick={onConnect}
                 >
                     <span>Connect Wallet</span>
                 </ConnectWalletButton>
@@ -174,13 +179,14 @@ const ConnectWalletButton = styled(Button)`
     }
 
     &:hover {
+        border-width: 3px;
         background:
             linear-gradient(#000000 0 0) padding-box,
             linear-gradient(-73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%) border-box;
     }
 
     &:active {
-        border-width: 3px;
+        border-width: 4px;
         box-shadow: inset -2px -2px 3px rgba(255, 255, 255, 0.25);
     }
 `;
