@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import Button from "../../components/Button";
 
+import LinkArrow from "../../assets/utils/link-arrow.svg";
 import Gear from "../../assets/utils/gear.svg";
 import Arrows from "../../assets/utils/arrows.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
@@ -30,24 +31,33 @@ const Wrappr: FC = () => {
 
   return (
     <Container>
-      <SelectorContainer>
-        <SelectorButton
-          active={wrap}
-          onClick={() =>
-            setWrap(true)
-          }
+      <ContainerRow>
+        <SelectorContainer>
+          <SelectorButton
+            active={wrap}
+            onClick={() =>
+              setWrap(true)
+            }
+          >
+            <span>Wrap</span>
+          </SelectorButton>
+          <SelectorButton
+            active={!wrap}
+            onClick={() =>
+              setWrap(false)
+            }
+          >
+            <span>Unwrap</span>
+          </SelectorButton>
+        </SelectorContainer>
+        <TVLButton
+          className="align-right"
+          onClick={() => console.log("You clicked on the TVL button!")}
         >
-          <span>Wrap</span>
-        </SelectorButton>
-        <SelectorButton
-          active={!wrap}
-          onClick={() =>
-            setWrap(false)
-          }
-        >
-          <span>Unwrap</span>
-        </SelectorButton>
-      </SelectorContainer>
+          <span>TVL</span>
+          <Image src={LinkArrow} priority={true} />
+        </TVLButton>
+      </ContainerRow>
       <WrapprContainerColumn>
         <WrapprContainerRow>
           <span>Wrappr</span>
@@ -160,6 +170,32 @@ const Container = styled.div`
   align-items: center;
   width: 100%;
   padding: 30px 40px 0px 40px;
+`;
+
+const ContainerRow = styled.div`
+  width: 518px;
+  //height: 44px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+
+  .align-right {
+    //align-content: flex-end;
+  }
+`;
+
+const TVLButton = styled(Button)`
+  width: 100%;
+  width: 68px;
+  height: 32px;
+  margin-left: 84px;
+
+  background: linear-gradient(121.5deg, #101215 55.37%, #22272B 106.67%);
+  border: 1px solid #000000;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+  border-radius: 40px;
 `;
 
 const SelectorContainer = styled.div`
