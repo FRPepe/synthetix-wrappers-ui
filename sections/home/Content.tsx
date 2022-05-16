@@ -385,18 +385,26 @@ const GearButton = styled(Button)`
 `;
 
 const ArrowButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   padding: 10px;
 
   background: #000000;
-  border: 2px solid #000000;
-  border-radius: 100px;
+  border: 1px solid #000000;
+  border-radius: 20px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
 
   &:hover {
-    background: #ffffff;
+    border: 1px solid rgba(130, 130, 149, 0.3);
+    background:
+      linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+      linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
   }
 
   &:active {
-    border: 2px solid #ffffff;
+    box-shadow: inset -1px -1px 1px rgba(255, 255, 255, 0.15);
   }
 `;
 
