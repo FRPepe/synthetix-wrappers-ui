@@ -130,12 +130,11 @@ const SelectorContainer = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: space-evenly;
-  //padding: 4px 12px 4px 4px;
-  //gap: 10px;
+  padding: 2px;
 
   /* Basic style */
   height: 44px;
-  width: 210px;
+  width: 200px;
 
   /* Background */
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
