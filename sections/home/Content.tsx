@@ -6,21 +6,27 @@ import Button from "../../components/Button";
 
 import Gear from "../../assets/utils/gear.svg";
 import Arrows from "../../assets/utils/arrows.svg";
+import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
+import Info from "../../assets/utils/info.svg";
 import EthereumLogo from "../../assets/logos/ethereum.svg";
 import sLUSDLogo from "../../assets/synths/sLUSD.svg";
-import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
+import sETHLogo from "../../assets/synths/sETH.svg"
 
 const Wrappr: FC = () => {
-  const [wrap, setWrap] = useState(false);
+  const [wrap, setWrap] = useState<boolean>(false);
 
   /* Wrappr */
-  const balance = "129,937,738.0838";
+  let balance: string = "129,937";
+  let maxWrappable: number = 80;
+  let wrapUSDValue: string = "2,895.25";
 
   /* Capacity */
-  const capacityUtilised = "80,000";
-  const maxCapacity = "200,000";
-  const capacityPercentage =
+  let capacityUtilised: string = "80,000";
+  let maxCapacity: string = "200,000";
+  let capacityPercentage: number =
     (parseInt(capacityUtilised, 10) / parseInt(maxCapacity, 10)) * 100;
+
+  let feeRate: number = 24;
 
   return (
     <Container>
@@ -54,6 +60,17 @@ const Wrappr: FC = () => {
         </WrapprContainerRow>
         <BlackContainer>
           <BlackContainerRow>
+            <span className="big">Wrapping</span>
+            <span>Balance: {balance}</span>
+            <MaxButton
+              onClick={() =>
+                console.log("You clicked on the max button!")
+              }
+            >
+              <span>MAX</span>
+            </MaxButton>
+          </BlackContainerRow>
+          <BlackContainerRow>
             <CurrencySelectoDropdown>
               <CurrencySelectorButton
                 onClick={() =>
@@ -61,7 +78,7 @@ const Wrappr: FC = () => {
                 }
               >
                 <StyledCurrencyContainer>
-                  <Image src={EthereumLogo} priority={true} />
+                  <Image className="big" src={EthereumLogo} priority={true} />
                   <span>ETH</span>
                   <Image src={DownArrowSmall} priority={true} />
                 </StyledCurrencyContainer>
@@ -79,7 +96,10 @@ const Wrappr: FC = () => {
             </CurrencySelectoDropdown>
             <NumericInput type="text" placeholder="0.0" />
           </BlackContainerRow>
-          <span>Balance: {balance}</span>
+          <BlackContainerRow>
+            <span>Max wrappable: {maxWrappable}Ξ</span>
+            <span>{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
+          </BlackContainerRow>
         </BlackContainer>
         <ArrowButton
           onClick={() =>
@@ -88,7 +108,24 @@ const Wrappr: FC = () => {
         >
           <Image src={Arrows} priority={true} />
         </ArrowButton>
-        <BlackContainer></BlackContainer>
+        <BlackContainer>
+          <BlackContainerRow>
+            <span>Into</span>
+            <span>Balance: {balance}</span>
+          </BlackContainerRow>
+          <BlackContainerRow>
+            <StyledCurrencyContainer2>
+              <Image className="big" src={sETHLogo} priority={true} />
+              <span>sETH</span>
+            </StyledCurrencyContainer2>
+            <NumericInput type="text" placeholder="0.0" />
+          </BlackContainerRow>
+          <StyledBlackContainerRow>
+            <span>Fee rate: {feeRate}%</span>
+            <Image className="tooltip" src={Info} priority={true}/>
+            <span className="big align-right">{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
+          </StyledBlackContainerRow>
+        </BlackContainer>
         <ActionButton
           onClick={() => console.log("You clicked on the action button!")}
         >
@@ -145,7 +182,7 @@ const SelectorContainer = styled.div`
   border-radius: 35px;
 `;
 
-const SelectorButton = styled(Button)<{active?: boolean}>`
+const SelectorButton = styled(Button) <{ active?: boolean }>`
   width: 95px;
   height: 36px;
   border-radius: 34px;
@@ -184,7 +221,7 @@ const WrapprContainerColumn = styled.div`
   gap: 15px;
 
   /* Basic style */
-  height: 400px;
+  height: 438px;
   width: 518px;
   margin-top: 25px;
 
@@ -224,7 +261,7 @@ const BlackContainer = styled.div`
   gap: 4px;
 
   width: 464px;
-  height: 79px;
+  height: 102px;
 
   background: #000000;
   border-radius: 4px;
@@ -244,7 +281,7 @@ const BlackContainerRow = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
 
   font-family: "Inter";
@@ -252,15 +289,50 @@ const BlackContainerRow = styled.div`
   font-weight: 700;
   font-size: 24px;
   line-height: 26px;
+
+  .big {
+    flex: 2;
+  }
+
+  .align-right {
+    text-align: right;
+  }
+`;
+
+const StyledBlackContainerRow = styled(BlackContainerRow)`
+  justify-content: flex-start;
+  gap: 4px;
+
+  .tooltip:hover {
+    // TODO
+  }
+`;
+
+const InfoButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: none;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+
+  &:hover {
+  }
+
+  &:active {
+    box-shadow: inset -1px -1px 1px rgba(255, 255, 255, 0.15);
+  }
 `;
 
 const CurrencySelectorButton = styled(Button)`
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
 
-  width: 138px;
+  padding: 0;
+  width: 120px;
   height: 37px;
 
   /* Border */
@@ -311,16 +383,27 @@ const StyledCurrencyContainer = styled(CurrencyContainer)`
   }
 `;
 
+const StyledCurrencyContainer2 = styled(CurrencyContainer)`
+  padding: 0;
+
+  /* Text */
+  span {
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 29px;
+  }
+`;
+
 const CurrencySelectorContainer = styled.div`
   /* Hide the dropdown menu by default */
   display: none;
   flex-direction: column;
   gap: 10px;
-  padding: 8px;
+  padding: 0px;
 
   /* Basic style */
-  height: 104px;
-  width: 139px;
+  height: 80px;
+  width: 120px;
 
   /* Background */
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
@@ -349,8 +432,37 @@ const CurrencySelectoDropdown = styled.div`
       margin-top: 44px;
       flex-direction: column;
       align-items: flex-start;
-      padding: 12px 8px 8px;
-      gap: 14px;
+      padding: 4px;
+    }
+  }
+`;
+
+const MaxButton = styled.button`
+  display: flex;
+
+  /* Remove button styling */
+  background: none;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+
+  padding-left: 10px;
+
+  span {
+    color: #00D1FF;
+  }
+
+  &:hover {
+    span {
+      color: #828295;
+    }
+  }
+
+  &:active {
+    span {
+      color: #00D1FF;
     }
   }
 `;

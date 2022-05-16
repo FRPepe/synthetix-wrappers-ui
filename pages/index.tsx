@@ -10,7 +10,7 @@ import Footer from "../sections/home/Footer";
 import Wallet from "../sections/home/WalletOverlay";
 
 const HomePage = () => {
-  const [showWalletOverlay, setShowWalletOverlay] = useState(false);
+  const [showWalletOverlay, setShowWalletOverlay] = useState<boolean>(false);
 
   return (
     <>
