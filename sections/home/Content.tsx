@@ -3,12 +3,13 @@ import styled, { css } from "styled-components";
 import Image from "next/image";
 
 import Button from "../../components/Button";
+import Chart from "./TVLChart";
 
 import LinkArrow from "../../assets/utils/link-arrow.svg";
 import Gear from "../../assets/utils/gear.svg";
 import Arrows from "../../assets/utils/arrows.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
-import Info from "../../assets/utils/info.svg";
+import BlueInfo from "../../assets/utils/blue-info.svg";
 import EthereumLogo from "../../assets/logos/ethereum.svg";
 import sLUSDLogo from "../../assets/synths/sLUSD.svg";
 import sETHLogo from "../../assets/synths/sETH.svg"
@@ -132,7 +133,7 @@ const Wrappr: FC = () => {
           </BlackContainerRow>
           <StyledBlackContainerRow>
             <span>Fee rate: {feeRate}%</span>
-            <Image className="tooltip" src={Info} priority={true}/>
+            <Image className="tooltip" src={BlueInfo} priority={true}/>
             <span className="big align-right">{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
           </StyledBlackContainerRow>
         </BlackContainer>
@@ -160,6 +161,7 @@ const Wrappr: FC = () => {
           </ColumnContainer>
         </CapacityDescriptionContainer>
       </CapacityContainer>
+      <Chart />
     </Container>
   );
 };
@@ -344,7 +346,7 @@ const StyledBlackContainerRow = styled(BlackContainerRow)`
   }
 `;
 
-const InfoButton = styled.button`
+const BlueInfoButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
