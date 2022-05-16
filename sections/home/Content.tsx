@@ -618,16 +618,36 @@ const GaugeProgress = styled.div<{ percentage: number }>`
   height: 12px;
   margin: 6px 6px;
 
-  background: linear-gradient(73.6deg, #85ffc4 2.11%, #5cc6ff 90.45%)
-      padding-box,
+  background:
+    linear-gradient(73.6deg, #85ffc4 2.11%, #5cc6ff 90.45%) padding-box,
     linear-gradient(#000000 0 0) border-box;
   border-radius: 50px 0px 0px 50px;
+
+  /* Percentage */
+  &:after {
+    height: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 150%;
+    color: #FFFFFF;
+  }
 
   ${(props) =>
     props.percentage >= 0 &&
     props.percentage < 100 &&
     css`
       width: ${(props.percentage * 97) / 100}%;
+
+      &:after {
+        content: '${props.percentage}%';
+        width: calc(100% + ${props.percentage.toString().length} * 1ch + 2ch);
+      }
     `}
 
   ${(props) =>
@@ -635,6 +655,11 @@ const GaugeProgress = styled.div<{ percentage: number }>`
     css`
       width: 97%;
       border-radius: 50px 50px 50px 50px;
+
+      &:after {
+        content: '100%';
+        width: calc(100% + 6ch);
+      }
     `}
 `;
 
