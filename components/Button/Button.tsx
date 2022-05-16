@@ -27,10 +27,10 @@ const Button = styled.button<ButtonProps>`
       width: 44px;
     `}
 
-    /* Background */
-    background:
-        linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-        linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
+  /* Background */
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3D464C -36.37%, #131619 62.81%);
 
   /* Border */
   border: 1px solid #8282954d;
