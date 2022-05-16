@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import styled, { css } from "styled-components";
 import Image from "next/image";
 
@@ -11,6 +11,8 @@ import sLUSDLogo from "../../assets/synths/sLUSD.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
 
 const Wrappr: FC = () => {
+  const [wrap, setWrap] = useState(false);
+
   /* Wrappr */
   const balance = "129,937,738.0838";
 
@@ -22,7 +24,24 @@ const Wrappr: FC = () => {
 
   return (
     <Container>
-      <SelectorContainer></SelectorContainer>
+      <SelectorContainer>
+        <SelectorButton
+          active={wrap}
+          onClick={() =>
+            setWrap(true)
+          }
+        >
+          <span>Wrap</span>
+        </SelectorButton>
+        <SelectorButton
+          active={!wrap}
+          onClick={() =>
+            setWrap(false)
+          }
+        >
+          <span>Unwrap</span>
+        </SelectorButton>
+      </SelectorContainer>
       <WrapprContainerColumn>
         <WrapprContainerRow>
           <span>Wrappr</span>
@@ -110,8 +129,9 @@ const SelectorContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 4px 12px 4px 4px;
-  gap: 10px;
+  justify-content: space-evenly;
+  //padding: 4px 12px 4px 4px;
+  //gap: 10px;
 
   /* Basic style */
   height: 44px;
@@ -124,6 +144,38 @@ const SelectorContainer = styled.div`
   /* Border */
   border: 1px solid rgba(130, 130, 149, 0.3);
   border-radius: 35px;
+`;
+
+const SelectorButton = styled(Button)<{active?: boolean}>`
+  width: 95px;
+  height: 36px;
+  border-radius: 34px;
+
+  /* Text */
+  span {
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  ${(props) =>
+    props.active &&
+    css`
+      background:
+        linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%);
+      
+      span {
+        color: #00D1FF;
+      }
+    `}
+
+  ${(props) =>
+    !props.active &&
+    css`
+      background: none;
+      border: none;
+      box-shadow: none;
+    `}
 `;
 
 const WrapprContainerColumn = styled.div`
