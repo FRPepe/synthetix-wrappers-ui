@@ -8,9 +8,11 @@ import Header from "../sections/home/Header";
 import Content from "../sections/home/Content";
 import Footer from "../sections/home/Footer";
 import Wallet from "../sections/home/WalletOverlay";
+import TVLChart from "../sections/home/TVLChartOverlay";
 
 const HomePage = () => {
   const [showWalletOverlay, setShowWalletOverlay] = useState<boolean>(false);
+  const [showTVLChartOverlay, setShowTVLChartOverlay] = useState<boolean>(false);
 
   return (
     <>
@@ -24,24 +26,28 @@ const HomePage = () => {
       </Head>
 
       <main className={styles.main}>
-        <Home showWalletOverlay={showWalletOverlay}>
+        <Home blur={showWalletOverlay || showTVLChartOverlay}>
           <Header onConnect={() => setShowWalletOverlay(true)} />
-          <Content />
+          <Content onTVLClick={() => setShowTVLChartOverlay(true)} />
           <Footer />
         </Home>
         <StyledWalletOverlay
           display={showWalletOverlay}
           onClose={() => setShowWalletOverlay(false)}
         />
+        <StyledTVLChartOverlay
+          display={showTVLChartOverlay}
+          onClose={() => setShowTVLChartOverlay(false)}
+        />
       </main>
     </>
   );
 };
 
-const Home = styled.div<{ showWalletOverlay: boolean }>`
+const Home = styled.div<{ blur: boolean }>`
   /* Make the background blur if the wallet overlay is displayed */
   ${(props) =>
-    props.showWalletOverlay &&
+    props.blur &&
     css`
       filter: blur(3px);
       background: rgba(13, 13, 13, 0.82);
@@ -49,6 +55,16 @@ const Home = styled.div<{ showWalletOverlay: boolean }>`
 `;
 
 const StyledWalletOverlay = styled(Wallet)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.5); /*dim the background*/
+`;
+
+const StyledTVLChartOverlay = styled(TVLChart)`
   position: absolute;
   top: 0;
   left: 0;

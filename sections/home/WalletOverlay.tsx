@@ -33,9 +33,9 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
         <Overlay>
           <Container>
             <CrossContainer>
-              <CrossButton size="xs" onClick={handleOnClose}>
+              <Button size="xs" onClick={handleOnClose}>
                 <Image src={CrossIcon} alt="cross-icon" priority={true} />
-              </CrossButton>
+              </Button>
             </CrossContainer>
             <h1>Connect To Wallet</h1>
             <p>Please select a wallet to connect to this dapp:</p>
@@ -218,7 +218,5 @@ const SeeMoreButton = styled(StyledButton)`
     font-size: 12px;
   }
 `;
-
-const CrossButton = styled(Button)``;
 
 export default WalletOverlay;

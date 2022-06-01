@@ -3,7 +3,6 @@ import styled, { css } from "styled-components";
 import Image from "next/image";
 
 import Button from "../../components/Button";
-import Chart from "./TVLChart";
 
 import LinkArrow from "../../assets/utils/link-arrow.svg";
 import Gear from "../../assets/utils/gear.svg";
@@ -14,7 +13,11 @@ import EthereumLogo from "../../assets/logos/ethereum.svg";
 import sLUSDLogo from "../../assets/synths/sLUSD.svg";
 import sETHLogo from "../../assets/synths/sETH.svg"
 
-const Wrappr: FC = () => {
+type WrapprProps = {
+  onTVLClick: () => void;
+};
+
+const Wrappr: FC<WrapprProps> = ({ onTVLClick }) => {
   const [wrap, setWrap] = useState<boolean>(false);
 
   /* Wrappr */
@@ -53,7 +56,7 @@ const Wrappr: FC = () => {
         </SelectorContainer>
         <TVLButton
           className="align-right"
-          onClick={() => console.log("You clicked on the TVL button!")}
+          onClick={onTVLClick}
         >
           <span>TVL</span>
           <Image src={LinkArrow} alt="link-arrow" priority={true} />
@@ -161,7 +164,6 @@ const Wrappr: FC = () => {
           </ColumnContainer>
         </CapacityDescriptionContainer>
       </CapacityContainer>
-      <Chart />
     </Container>
   );
 };
