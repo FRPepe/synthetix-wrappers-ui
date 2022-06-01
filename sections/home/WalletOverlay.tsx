@@ -33,9 +33,9 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
         <Overlay>
           <Container>
             <CrossContainer>
-              <CrossButton size="xs" onClick={handleOnClose}>
-                <Image src={CrossIcon} priority={true} />
-              </CrossButton>
+              <Button size="xs" onClick={handleOnClose}>
+                <Image src={CrossIcon} alt="cross-icon" priority={true} />
+              </Button>
             </CrossContainer>
             <h1>Connect To Wallet</h1>
             <p>Please select a wallet to connect to this dapp:</p>
@@ -45,7 +45,7 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
                   console.log("You clicked on the browser wallet button!")
                 }
               >
-                <Image src={MetamaskIcon} priority={true} />
+                <Image src={MetamaskIcon} alt="metamask-icon" priority={true} />
                 <span>Browser Wallet</span>
               </NetworkButton>
               <NetworkButton
@@ -55,7 +55,7 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
                   )
                 }
               >
-                <Image src={ConnectMobileIcon} priority={true} />
+                <Image src={ConnectMobileIcon} alt="connect-mobile-icon" priority={true} />
                 <span>Connect Mobile Wallet</span>
               </NetworkButton>
               <NetworkButton
@@ -63,13 +63,13 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
                   console.log("You clicked on the connect ledger button!")
                 }
               >
-                <Image src={LedgerIcon} priority={true} />
+                <Image src={LedgerIcon} alt="ledger-icon" priority={true} />
                 <span>Connect Ledger</span>
               </NetworkButton>
               <NetworkButton
                 onClick={() => console.log("You clicked on the trezor button!")}
               >
-                <Image src={TrezorIcon} priority={true} />
+                <Image src={TrezorIcon} alt="trezor-icon" priority={true} />
                 <span>Trezor</span>
               </NetworkButton>
               <SeeMoreButton
@@ -218,7 +218,5 @@ const SeeMoreButton = styled(StyledButton)`
     font-size: 12px;
   }
 `;
-
-const CrossButton = styled(Button)``;
 
 export default WalletOverlay;
