@@ -56,7 +56,7 @@ const Wrappr: FC = () => {
           onClick={() => console.log("You clicked on the TVL button!")}
         >
           <span>TVL</span>
-          <Image src={LinkArrow} priority={true} />
+          <Image src={LinkArrow} alt="link-arrow" priority={true} />
         </TVLButton>
       </ContainerRow>
       <WrapprContainerColumn>
@@ -66,7 +66,7 @@ const Wrappr: FC = () => {
             size="sm"
             onClick={() => console.log("You clicked on the gear button!")}
           >
-            <Image src={Gear} priority={true} />
+            <Image src={Gear}  alt="gear-icon" priority={true} />
           </GearButton>
         </WrapprContainerRow>
         <BlackContainer>
@@ -89,18 +89,18 @@ const Wrappr: FC = () => {
                 }
               >
                 <StyledCurrencyContainer>
-                  <Image className="big" src={EthereumLogo} priority={true} />
+                  <Image className="big" src={EthereumLogo} alt="ethereum-logo" priority={true} />
                   <span>ETH</span>
-                  <Image src={DownArrowSmall} priority={true} />
+                  <Image src={DownArrowSmall} alt="down-arrow" priority={true} />
                 </StyledCurrencyContainer>
               </CurrencySelectorButton>
               <CurrencySelectorContainer>
                 <CurrencyContainer>
-                  <Image src={sLUSDLogo} priority={true} />
+                  <Image src={sLUSDLogo} alt="sLUSD-logo" priority={true} />
                   <span>LUSD</span>
                 </CurrencyContainer>
                 <CurrencyContainer active={true}>
-                  <Image src={EthereumLogo} priority={true} />
+                  <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
                   <span>ETH</span>
                 </CurrencyContainer>
               </CurrencySelectorContainer>
@@ -117,7 +117,7 @@ const Wrappr: FC = () => {
             console.log("You clicked on the double arrows button!")
           }
         >
-          <Image src={Arrows} priority={true} />
+          <Image src={Arrows} alt="trade-arrows" priority={true} />
         </ArrowButton>
         <BlackContainer>
           <BlackContainerRow>
@@ -126,14 +126,14 @@ const Wrappr: FC = () => {
           </BlackContainerRow>
           <BlackContainerRow>
             <StyledCurrencyContainer2>
-              <Image className="big" src={sETHLogo} priority={true} />
+              <Image className="big" src={sETHLogo} alt="sETH-logo" priority={true} />
               <span>sETH</span>
             </StyledCurrencyContainer2>
             <NumericInput type="text" placeholder="0.0" />
           </BlackContainerRow>
           <StyledBlackContainerRow>
             <span>Fee rate: {feeRate}%</span>
-            <Image className="tooltip" src={BlueInfo} priority={true}/>
+            <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true}/>
             <span className="big align-right">{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
           </StyledBlackContainerRow>
         </BlackContainer>

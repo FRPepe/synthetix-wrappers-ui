@@ -17,25 +17,25 @@ type HeaderProps = {
 const Header: FC<HeaderProps> = ({ onConnect }) => {
   return (
     <Container>
-      <Image src={SynthetixLogo} priority={true} />
+      <Image src={SynthetixLogo} alt="synthetix-logo" priority={true} />
       <MenuContainer>
         <NetworkContainerDropdown>
           <Button
             onClick={() => console.log("You clicked on the network button!")}
           >
             <NetworkContainer>
-              <Image src={EthereumLogo} priority={true} />
+              <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
               <span>Ethereum</span>
-              <Image src={DownArrow} priority={true} />
+              <Image src={DownArrow} alt="down-arrow" priority={true} />
             </NetworkContainer>
           </Button>
           <NetworkSelectorContainer>
             <StyledNetworkContainer>
-              <Image src={OptimismLogo} priority={true} />
+              <Image src={OptimismLogo} alt="optimism-logo" priority={true} />
               <span>Optimism</span>
             </StyledNetworkContainer>
             <StyledNetworkContainer active={true}>
-              <Image src={EthereumLogo} priority={true} />
+              <Image src={EthereumLogo} alt="optimism-logo" priority={true} />
               <span>Ethereum</span>
             </StyledNetworkContainer>
           </NetworkSelectorContainer>

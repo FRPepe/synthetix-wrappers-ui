@@ -103,7 +103,7 @@ const TVLChart: FC = () => {
                 <Column>
                     <StyledRow>
                         <h1>TOTAL VALUE LOCKED</h1>
-                        <Image className="tooltip" src={WhiteInfo} priority={true} />
+                        <Image className="tooltip" alt="tooltip" src={WhiteInfo} priority={true} />
                     </StyledRow>
                     <span className="tvl">${tvl}</span>
                 </Column>
