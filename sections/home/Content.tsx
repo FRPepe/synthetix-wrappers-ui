@@ -1,57 +1,128 @@
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import styled, { css } from "styled-components";
 import Image from "next/image";
+
+import { ethers, utils, BigNumber } from 'ethers';
 
 import Button from "../../components/Button";
 
 import LinkArrow from "../../assets/utils/link-arrow.svg";
-import Gear from "../../assets/utils/gear.svg";
 import Arrows from "../../assets/utils/arrows.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
 import BlueInfo from "../../assets/utils/blue-info.svg";
 import EthereumLogo from "../../assets/logos/ethereum.svg";
-import sLUSDLogo from "../../assets/synths/sLUSD.svg";
-import sETHLogo from "../../assets/synths/sETH.svg"
+import LUSDLogo from "../../assets/synths/sLUSD.svg";
+import sUSDLogo from "../../assets/synths/sUSD.png";
+import sETHLogo from "../../assets/synths/sETH.png"
+import WETHLogo from "../../assets/synths/weth.png"
 
 type WrapprProps = {
   onTVLClick: () => void;
+  handleInputValue: (e: any) => void;
+  handleOutputValue: (e: any) => void;
+  toggleMintOrBurn: () => void;
+  handleMaxButton: () => void;
+  handleCurrency: (currency: string) => void;
+  sendApprovalTransaction: () => void;
+  sendSwapTransaction: () => void;
+  userBalances: any;
+  userApprovals: any;
+  ETHwrapperData: any;
+  USDwrapperData: any;
+  isMinting: boolean;
+  inputValue: string;
+  outputValue: string;
+  inputCurrency: string;
+  outputCurrency: string;
 };
 
-const Wrappr: FC<WrapprProps> = ({ onTVLClick }) => {
-  const [wrap, setWrap] = useState<boolean>(false);
-
-  /* Wrappr */
-  let balance: string = "129,937";
-  let maxWrappable: number = 80;
-  let wrapUSDValue: string = "2,895.25";
+const Wrappr: FC<WrapprProps> = ({
+  onTVLClick,
+  handleInputValue,
+  handleOutputValue,
+  toggleMintOrBurn,
+  handleMaxButton,
+  handleCurrency,
+  sendApprovalTransaction,
+  sendSwapTransaction,
+  userBalances,
+  userApprovals,
+  ETHwrapperData,
+  USDwrapperData,
+  isMinting,
+  inputValue,
+  outputValue,
+  inputCurrency,
+  outputCurrency
+}) => {
 
   /* Capacity */
-  let capacityUtilised: string = "80,000";
-  let maxCapacity: string = "200,000";
-  let capacityPercentage: number =
-    (parseInt(capacityUtilised, 10) / parseInt(maxCapacity, 10)) * 100;
+  const [capacityPercentage, setCapacityPercentage] = useState<number>(0);
 
-  let feeRate: number = 24;
+  useEffect(() => {
+    let newPercentage: number = 0;
+    if (inputCurrency == 'ETH' || inputCurrency == 'sETH' || inputCurrency == 'WETH') {
+      newPercentage = parseFloat(ETHwrapperData.WETHreserves) > parseFloat(ETHwrapperData.maxETH) ? 100 :
+        Math.round((parseFloat(ETHwrapperData.WETHreserves) * 100) / parseFloat(ETHwrapperData.maxETH))
+    } else if (inputCurrency == 'LUSD' || inputCurrency == 'sUSD') {
+      newPercentage = parseFloat(USDwrapperData.LUSDreserves) > parseFloat(USDwrapperData.maxUSD) ? 100 :
+        Math.round((parseFloat(USDwrapperData.LUSDreserves) * 100) / parseFloat(USDwrapperData.maxUSD))
+    }
+    setCapacityPercentage(newPercentage);
+  });
+
+  /* Swap and Approval Buttons */
+  const [swapButtonText, setSwapButtonText] = useState<string>('Enter an amount');
+
+  useEffect(() => {
+    if (parseFloat(inputValue) == 0 || inputValue.length == 0) {
+      setSwapButtonText('Enter an amount');
+    } else if (parseFloat(inputValue) > 0 && parseFloat(inputValue) > parseFloat(userBalances[inputCurrency])) {
+      setSwapButtonText('Insufficient balance');
+    } else if ((inputCurrency == 'ETH' || inputCurrency == 'WETH') && parseFloat(inputValue) > parseFloat(ETHwrapperData.ETHcapacity)) {
+      setSwapButtonText('Insufficient sETH minting capacity');
+    } else if (inputCurrency == 'LUSD' && parseFloat(inputValue) > parseFloat(USDwrapperData.USDcapacity)) {
+      setSwapButtonText('Insufficient sUSD minting capacity');
+    } else if (inputCurrency == 'sETH' && parseFloat(inputValue) > parseFloat(ETHwrapperData.WETHreserves)) {
+      setSwapButtonText('Insufficient WETH reserves');
+    } else if (inputCurrency == 'sUSD' && parseFloat(inputValue) > parseFloat(USDwrapperData.LUSDreserves)) {
+      setSwapButtonText('Insufficient LUSD reserves');
+    } else {
+      if (inputCurrency == 'ETH') {
+        setSwapButtonText('Swap');
+      } else {
+        if (userApprovals[inputCurrency] > parseFloat(inputValue)) {
+          setSwapButtonText('Swap');
+        } else {
+          setSwapButtonText(`Allow the Wrapper to use your ${inputCurrency}`);
+        }
+      }
+    }
+  });
+
+  const handleTransaction = async () => {
+    if (swapButtonText == `Allow the Wrapper to use your ${inputCurrency}`) {
+      await sendApprovalTransaction();
+    } else if (swapButtonText == 'Swap') {
+      await sendSwapTransaction();
+    }
+  }
 
   return (
     <Container>
       <ContainerRow>
         <SelectorContainer>
           <SelectorButton
-            active={wrap}
-            onClick={() =>
-              setWrap(true)
-            }
+            active={isMinting}
+            onClick={() => toggleMintOrBurn()}
           >
-            <span>Wrap</span>
+            <span>Mint</span>
           </SelectorButton>
           <SelectorButton
-            active={!wrap}
-            onClick={() =>
-              setWrap(false)
-            }
+            active={!isMinting}
+            onClick={() => toggleMintOrBurn()}
           >
-            <span>Unwrap</span>
+            <span>Burn</span>
           </SelectorButton>
         </SelectorContainer>
         <TVLButton
@@ -65,86 +136,143 @@ const Wrappr: FC<WrapprProps> = ({ onTVLClick }) => {
       <WrapprContainerColumn>
         <WrapprContainerRow>
           <span>Wrappr</span>
-          <GearButton
-            size="sm"
-            onClick={() => console.log("You clicked on the gear button!")}
-          >
-            <Image src={Gear}  alt="gear-icon" priority={true} />
-          </GearButton>
         </WrapprContainerRow>
         <BlackContainer>
           <BlackContainerRow>
             <span className="big">Wrapping</span>
-            <span>Balance: {balance}</span>
+            <span>Balance: {parseFloat(userBalances[inputCurrency]).toFixed(2)}</span>
             <MaxButton
-              onClick={() =>
-                console.log("You clicked on the max button!")
-              }
+              onClick={() => handleMaxButton()}
             >
               <span>MAX</span>
             </MaxButton>
           </BlackContainerRow>
           <BlackContainerRow>
-            <CurrencySelectoDropdown>
-              <CurrencySelectorButton
-                onClick={() =>
-                  console.log("You clicked on the first currency selector!")
-                }
-              >
+            <CurrencySelectoDropdown
+              active={isMinting}
+            >
+              <CurrencySelectorButton>
                 <StyledCurrencyContainer>
-                  <Image className="big" src={EthereumLogo} alt="ethereum-logo" priority={true} />
-                  <span>ETH</span>
+                  <div style={{ marginTop: "4px", display: inputCurrency == 'ETH' ? 'initial' : 'none' }} >
+                    <Image className="big" src={EthereumLogo} alt="ETH-logo" priority={true} />
+                  </div>
+                  <div style={{ marginTop: "4px", display: inputCurrency == 'LUSD' ? 'initial' : 'none' }} >
+                    <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
+                  </div>
+                  <div style={{ marginTop: "4px", display: inputCurrency == 'WETH' ? 'initial' : 'none' }} >
+                    <img src={WETHLogo.src} alt="WETH-logo" style={{ width: "24px", height: "24px" }} />
+                  </div>
+                  <div style={{ marginTop: "2px", display: inputCurrency == 'sETH' ? 'initial' : 'none' }} >
+                    <img src={sETHLogo.src} alt="sETH-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
+                  </div>
+                  <div style={{ marginTop: "4px", display: inputCurrency == 'sUSD' ? 'initial' : 'none' }} >
+                    <img src={sUSDLogo.src} alt="sUSD-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
+                  </div>
+                  <span>{inputCurrency}</span>
                   <Image src={DownArrowSmall} alt="down-arrow" priority={true} />
                 </StyledCurrencyContainer>
               </CurrencySelectorButton>
-              <CurrencySelectorContainer>
-                <CurrencyContainer>
-                  <Image src={sLUSDLogo} alt="sLUSD-logo" priority={true} />
+              <CurrencySelectorContainerMint>
+                <CurrencyContainer
+                  onClick={() => handleCurrency("LUSD")}
+                >
+                  <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
                   <span>LUSD</span>
                 </CurrencyContainer>
-                <CurrencyContainer active={true}>
-                  <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
+                <CurrencyContainer
+                  onClick={() => handleCurrency("ETH")}
+                >
+                  <Image src={EthereumLogo} alt="ETH-logo" priority={true} />
                   <span>ETH</span>
                 </CurrencyContainer>
-              </CurrencySelectorContainer>
+                <CurrencyContainer
+                  onClick={() => handleCurrency("WETH")}
+                >
+                  <img src={WETHLogo.src} alt="WETH-logo" style={{ width: "24px", height: "24px" }} />
+                  <span>WETH</span>
+                </CurrencyContainer>
+              </CurrencySelectorContainerMint>
+              <CurrencySelectorContainerBurn>
+                <CurrencyContainer
+                  onClick={() => handleCurrency("sUSD")}
+                >
+                  <div>
+                    <img src={sUSDLogo.src} alt="sUSD-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
+                  </div>
+                  <span>sUSD</span>
+                </CurrencyContainer>
+                <CurrencyContainer
+                  onClick={() => handleCurrency("sETH")}
+                >
+                  <img src={sETHLogo.src} alt="sETH-logo" style={{ width: "27px", height: "27px", marginTop: "0px" }} />
+                  <span>sETH</span>
+                </CurrencyContainer>
+              </CurrencySelectorContainerBurn>
             </CurrencySelectoDropdown>
-            <NumericInput type="text" placeholder="0.0" />
+            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={inputValue} onChange={(e: any) => handleInputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <BlackContainerRow>
-            <span>Max wrappable: {maxWrappable}Ξ</span>
-            <span>{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
+            <span style={{ display: inputCurrency == 'ETH' || inputCurrency == 'WETH' ? 'initial' : 'none' }}>Max mintable: {parseFloat(ETHwrapperData.ETHcapacity).toFixed(2)}Ξ</span>
+            <span style={{ display: inputCurrency == 'LUSD' ? 'initial' : 'none' }}>Max mintable: {parseFloat(USDwrapperData.USDcapacity).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}</span>
+            <span style={{ display: inputCurrency == 'sETH' ? 'initial' : 'none' }}>Max burnable: {parseFloat(ETHwrapperData.WETHreserves).toFixed(2)}Ξ</span>
+            <span style={{ display: inputCurrency == 'sUSD' ? 'initial' : 'none' }}>Max burnable: {parseFloat(USDwrapperData.LUSDreserves).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}</span>
           </BlackContainerRow>
         </BlackContainer>
         <ArrowButton
-          onClick={() =>
-            console.log("You clicked on the double arrows button!")
-          }
+          onClick={() => toggleMintOrBurn()}
         >
           <Image src={Arrows} alt="trade-arrows" priority={true} />
         </ArrowButton>
         <BlackContainer>
           <BlackContainerRow>
             <span>Into</span>
-            <span>Balance: {balance}</span>
+            <span>Balance: {parseFloat(userBalances[outputCurrency]).toFixed(2)}</span>
           </BlackContainerRow>
           <BlackContainerRow>
             <StyledCurrencyContainer2>
-              <Image className="big" src={sETHLogo} alt="sETH-logo" priority={true} />
-              <span>sETH</span>
+              <div style={{ marginTop: "4px", display: outputCurrency == 'ETH' ? 'initial' : 'none' }} >
+                <Image className="big" src={EthereumLogo} alt="ETH-logo" priority={true} />
+              </div>
+              <div style={{ marginTop: "4px", display: outputCurrency == 'LUSD' ? 'initial' : 'none' }} >
+                <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
+              </div>
+              <div style={{ marginTop: "4px", display: outputCurrency == 'WETH' ? 'initial' : 'none' }} >
+                <img src={WETHLogo.src} alt="WETH-logo" style={{ width: "24px", height: "24px" }} />
+              </div>
+              <div style={{ marginTop: "2px", display: outputCurrency == 'sETH' ? 'initial' : 'none' }} >
+                <img src={sETHLogo.src} alt="sETH-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
+              </div>
+              <div style={{ marginTop: "4px", display: outputCurrency == 'sUSD' ? 'initial' : 'none' }} >
+                <img src={sUSDLogo.src} alt="sUSD-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
+              </div>
+              <span>{outputCurrency}</span>
             </StyledCurrencyContainer2>
-            <NumericInput type="text" placeholder="0.0" />
+            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={outputValue} onChange={(e: any) => handleOutputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <StyledBlackContainerRow>
-            <span>Fee rate: {feeRate}%</span>
-            <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true}/>
-            <span className="big align-right">{wrapUSDValue === "" ? "" : `$${wrapUSDValue}`}</span>
+            <span style={{ display: inputCurrency == 'ETH' || inputCurrency == 'WETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHmintFeeRate) * 100}%`}</span>
+            <span style={{ display: inputCurrency == 'sETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHburnFeeRate) * 100}%`}</span>
+            <span style={{ display: inputCurrency == 'LUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDmintFeeRate) * 100}%`}</span>
+            <span style={{ display: inputCurrency == 'sUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDburnFeeRate) * 100}%`}</span>
+            <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true} />
           </StyledBlackContainerRow>
         </BlackContainer>
-        <ActionButton
-          onClick={() => console.log("You clicked on the action button!")}
+        <SwapButton
+          active={swapButtonText == `Allow the Wrapper to use your ${inputCurrency}` || swapButtonText == 'Swap'}
+          onClick={() => handleTransaction()}
         >
-          <span>Select amount to wrap</span>
-        </ActionButton>
+          <span>{swapButtonText}</span>
+        </SwapButton>
       </WrapprContainerColumn>
       <CapacityContainer>
         <TitleContainer>
@@ -156,11 +284,23 @@ const Wrappr: FC<WrapprProps> = ({ onTVLClick }) => {
         <CapacityDescriptionContainer>
           <ColumnContainer>
             <span className="bold">Utilised</span>
-            <span>{capacityUtilised}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'ETH' || inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.WETHreserves).toFixed(2)}Ξ`}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'LUSD' || inputCurrency == 'sUSD' ? 'initial' : 'none' }}>{`${parseFloat(USDwrapperData.LUSDreserves).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}`}</span>
           </ColumnContainer>
           <ColumnContainer>
             <span className="bold">Max Capacity</span>
-            <span>{maxCapacity}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'ETH' || inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.maxETH).toFixed(2)}Ξ`}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'LUSD' || inputCurrency == 'sUSD' ? 'initial' : 'none' }}>{`${parseFloat(USDwrapperData.maxUSD).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}`}</span>
           </ColumnContainer>
         </CapacityDescriptionContainer>
       </CapacityContainer>
@@ -372,7 +512,7 @@ const CurrencySelectorButton = styled(Button)`
   align-items: center;
 
   padding: 0;
-  width: 120px;
+  width: 150px;
   height: 37px;
 
   /* Border */
@@ -394,12 +534,10 @@ const CurrencyContainer = styled.div<{ active?: boolean }>`
   width: 100%;
   height: 40px;
 
-  ${(props) =>
-    props.active &&
-    css`
-      background: rgba(130, 130, 149, 0.3);
-      border-radius: 4px;
-    `}
+  &:hover {
+    background: rgba(130, 130, 149, 0.3);
+    border-radius: 4px;
+  }
 
   /* Text */
     span {
@@ -434,7 +572,30 @@ const StyledCurrencyContainer2 = styled(CurrencyContainer)`
   }
 `;
 
-const CurrencySelectorContainer = styled.div`
+const CurrencySelectorContainerMint = styled.div`
+  /* Hide the dropdown menu by default */
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0px;
+
+  /* Basic style */
+  height: 120px;
+  width: 120px;
+
+  /* Background */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(311.52deg, #3d464c -36.37%, #131619 62.81%);
+
+  /* Border */
+  border: 1px solid #8282954d;
+  border-radius: 4px;
+
+  /* Shadow */
+  box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
+`;
+
+const CurrencySelectorContainerBurn = styled.div`
   /* Hide the dropdown menu by default */
   display: none;
   flex-direction: column;
@@ -457,19 +618,19 @@ const CurrencySelectorContainer = styled.div`
   box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
 `;
 
-const CurrencySelectoDropdown = styled.div`
+const CurrencySelectoDropdown = styled.div<{ active?: boolean }>`
   flex-direction: column;
   gap: 8px;
 
   /* Reveal the dropdown menu when the button is clicked and then if the dropdown menu is hovered */
   &:hover,
-  > ${CurrencySelectorContainer}:hover {
+  > ${(props) => props.active ? CurrencySelectorContainerMint : CurrencySelectorContainerBurn}:hover {
     display: flex;
 
-    > ${CurrencySelectorContainer} {
+    > ${(props) => props.active ? CurrencySelectorContainerMint : CurrencySelectorContainerBurn} {
       position: absolute;
       display: flex;
-      margin-top: 44px;
+      margin-top: 38px;
       flex-direction: column;
       align-items: flex-start;
       padding: 4px;
@@ -532,10 +693,6 @@ const NumericInput = styled.input`
     text-align: right;
 `;
 
-const GearButton = styled(Button)`
-  padding-top: 12px;
-`;
-
 const ArrowButton = styled.button`
   display: flex;
   align-items: center;
@@ -560,7 +717,7 @@ const ArrowButton = styled.button`
   }
 `;
 
-const ActionButton = styled(Button)`
+const SwapButton = styled(Button) <{ active?: boolean }>`
   width: 464px;
   height: 40px;
 
@@ -569,7 +726,23 @@ const ActionButton = styled(Button)`
 
   span {
     color: #565663;
+    font-weight: 550;
+    font-size: 20px;
+    line-height: 29px;
   }
+
+  ${(props) =>
+    props.active &&
+    css`
+      background:
+        linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        linear-gradient(73.6deg, #85FFC4 2.11%, #5CC6FF 90.45%);
+      
+      span {
+        color: #00D1FF;
+      }
+    `}
+
 `;
 
 const CapacityContainer = styled.div`
@@ -643,7 +816,7 @@ const CapacityDescriptionContainer = styled.div`
 `;
 
 const GaugeContainer = styled.div`
-  width: 100%;
+  width: 95%;
   height: 26px;
 
   /* Border */
@@ -693,7 +866,7 @@ const GaugeProgress = styled.div<{ percentage: number }>`
   ${(props) =>
     props.percentage >= 100 &&
     css`
-      width: 97%;
+      width: 97.5%;
       border-radius: 50px 50px 50px 50px;
 
       &:after {

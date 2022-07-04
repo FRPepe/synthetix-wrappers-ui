@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import styled, { css } from "styled-components";
 import Image from "next/image";
 
@@ -9,46 +9,55 @@ import EthereumLogo from "../../assets/logos/ethereum.svg";
 import OptimismLogo from "../../assets/logos/optimism.svg";
 import DownArrow from "../../assets/utils/down-arrow.svg";
 import BadgeLive from "../../assets/utils/badge-live.svg";
+import CrossIcon from "../../assets/utils/cross.svg";
 
 type HeaderProps = {
   onConnect: () => void;
+  account: string;
+  chainId: number;
+  onDisconnectWallet: () => void;
+  toggleNetwork: (arg0: number) => void;
 };
 
-const Header: FC<HeaderProps> = ({ onConnect }) => {
+const Header: FC<HeaderProps> = ({ onConnect, account, chainId, onDisconnectWallet, toggleNetwork }) => {
+
   return (
     <Container>
       <Image src={SynthetixLogo} alt="synthetix-logo" priority={true} />
       <MenuContainer>
         <NetworkContainerDropdown>
-          <Button
-            onClick={() => console.log("You clicked on the network button!")}
-          >
+          <Button>
             <NetworkContainer>
-              <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
-              <span>Ethereum</span>
+              <Image src={chainId == 10 ? OptimismLogo : EthereumLogo} alt="ethereum-logo" priority={true} />
+              <span>{chainId == 10 ? 'Optimism' : 'Ethereum'}</span>
               <Image src={DownArrow} alt="down-arrow" priority={true} />
             </NetworkContainer>
           </Button>
           <NetworkSelectorContainer>
-            <StyledNetworkContainer>
+            <StyledNetworkContainer
+              onClick={() => toggleNetwork(10)}
+            >
               <Image src={OptimismLogo} alt="optimism-logo" priority={true} />
               <span>Optimism</span>
             </StyledNetworkContainer>
-            <StyledNetworkContainer active={true}>
-              <Image src={EthereumLogo} alt="optimism-logo" priority={true} />
+            <StyledNetworkContainer
+              onClick={() => toggleNetwork(1)}
+            >
+              <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
               <span>Ethereum</span>
             </StyledNetworkContainer>
           </NetworkSelectorContainer>
         </NetworkContainerDropdown>
         <ConnectWalletButton onClick={onConnect}>
-          <span>Connect Wallet</span>
+          <span>{account.length > 0 ? account.slice(0, 8) + ' . . . ' + account.slice(-6) : 'Connect Wallet'}</span>
         </ConnectWalletButton>
-        <DotButton
+        <Button
           size="sm"
-          onClick={() => console.log("You clicked on the option button!")}
+          onClick={onDisconnectWallet}
+          style={{ height: "35px", width: "35px" }}
         >
-          <span>...</span>
-        </DotButton>
+          <Image src={CrossIcon} alt="cross-icon" />
+        </Button>
       </MenuContainer>
     </Container>
   );
@@ -97,7 +106,7 @@ const NetworkContainer = styled(BaseContainer)`
   gap: 5px;
 `;
 
-const StyledNetworkContainer = styled(NetworkContainer)<{ active?: boolean }>`
+const StyledNetworkContainer = styled(NetworkContainer) <{ active?: boolean }>`
   padding: 8px;
   justify-content: left;
 
@@ -129,6 +138,11 @@ const StyledNetworkContainer = styled(NetworkContainer)<{ active?: boolean }>`
     font-size: 14px;
     line-height: 20px;
   }
+
+  &:hover {
+    background: rgba(130, 130, 149, 0.3);
+    border-radius: 4px;
+  }
 `;
 
 const NetworkContainerDropdown = styled(BaseContainer)`
@@ -143,7 +157,7 @@ const NetworkContainerDropdown = styled(BaseContainer)`
     > ${NetworkSelectorContainer} {
       position: absolute;
       display: flex;
-      margin-top: 54px;
+      margin-top: 45px;
     }
   }
 `;
@@ -180,13 +194,6 @@ const ConnectWalletButton = styled(Button)`
   &:active {
     border-width: 4px;
     box-shadow: inset -2px -2px 3px rgba(255, 255, 255, 0.25);
-  }
-`;
-
-const DotButton = styled(Button)`
-  span {
-    font-weight: 700;
-    font-size: 20px;
   }
 `;
 

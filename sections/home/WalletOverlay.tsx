@@ -9,13 +9,17 @@ import MetamaskIcon from "../../assets/wallets/metamask.svg";
 import ConnectMobileIcon from "../../assets/wallets/connect-mobile.svg";
 import LedgerIcon from "../../assets/wallets/ledger.svg";
 import TrezorIcon from "../../assets/wallets/trezor.svg";
+import Spinner from "../../assets/utils/spinner.png";
 
 type WalletOverlayProps = {
   display: boolean;
+  isLoadingWeb3: boolean;
   onClose: () => void;
+  onConnectWallet: () => void;
 };
 
-const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
+const WalletOverlay: FC<WalletOverlayProps> = ({ display, isLoadingWeb3, onClose, onConnectWallet }) => {
+
   const [isBrowser, setIsBrowser] = useState(false);
 
   useEffect(() => {
@@ -33,6 +37,7 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
         <Overlay>
           <Container>
             <CrossContainer>
+              {isLoadingWeb3 === true ? <img alt="spinner" src={Spinner.src} style={{ height: "28px", width: "28px", marginRight: "120px", marginTop: "5px" }} /> : null}
               <Button size="xs" onClick={handleOnClose}>
                 <Image src={CrossIcon} alt="cross-icon" priority={true} />
               </Button>
@@ -41,18 +46,13 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose }) => {
             <p>Please select a wallet to connect to this dapp:</p>
             <ListContainer>
               <NetworkButton
-                onClick={() =>
-                  console.log("You clicked on the browser wallet button!")
-                }
+                onClick={onConnectWallet}
               >
                 <Image src={MetamaskIcon} alt="metamask-icon" priority={true} />
                 <span>Browser Wallet</span>
               </NetworkButton>
               <NetworkButton
-                onClick={() =>
-                  console.log(
-                    "You clicked on the connect mobile wallet button!"
-                  )
+                onClick={() => console.log("You clicked on the mobile wallet button!")
                 }
               >
                 <Image src={ConnectMobileIcon} alt="connect-mobile-icon" priority={true} />
