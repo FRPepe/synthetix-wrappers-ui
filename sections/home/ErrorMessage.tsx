@@ -1,23 +1,38 @@
 import { FC } from "react";
 import styled from "styled-components";
+import Image from "next/image";
 
-import Spinner from "../../assets/utils/spinner.png";
+import Button from "../../components/Button";
+import CrossIcon from "../../assets/utils/cross.svg";
 
 type LoadingWeb3Props = {
   display: boolean;
+  errorMessage: string;
+  setErrorMessage: (errorMessage: string) => void;
 };
 
-const LoadingWeb3: FC<LoadingWeb3Props> = ({ display }) => {
+const ErrorMessage: FC<LoadingWeb3Props> = ({ display, errorMessage, setErrorMessage }) => {
 
   return (
     <>
       {display && (
         <Overlay>
           <Container>
-            <h1>Web3 data loading...</h1>
             <CrossContainer>
-              <img alt="spinner" src={Spinner.src} style={{ height: "28px", width: "28px" }} />
+              <div style={{ width: "100%" }}>
+              </div>
+              <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+                <h1>Error :</h1>
+              </div>
+              <div style={{ width: "100%", display: "flex", justifyContent: "end" }}>
+                <Button size="xs" onClick={() => setErrorMessage('')}>
+                  <Image src={CrossIcon} alt="cross-icon" priority={true} />
+                </Button>
+              </div>
             </CrossContainer>
+            <div style={{ textAlign: "center" }}>
+              <span>{errorMessage}</span>
+            </div>
           </Container>
         </Overlay>
       )}
@@ -44,8 +59,8 @@ const Container = styled.div`
   padding: 0px 20px 0px 20px;
 
   /* Basic styling */
-  width: 220px;
-  height: 150px;
+  width: 300px;
+  height: 180px;
 
   /* Background  */
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
@@ -75,7 +90,7 @@ const CrossContainer = styled.div`
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  margin-bottom: 10px;
 `;
 
-export default LoadingWeb3;
+export default ErrorMessage;

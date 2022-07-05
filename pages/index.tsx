@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 import { ethers, utils, BigNumber, constants } from 'ethers';
 import Web3Modal from "web3modal";
 
-import { ADDRESSES, ABIs } from './contractData';
+import { ADDRESSES, ABIs } from '../contractData';
 
 import styles from "../styles/Home.module.css";
 
@@ -15,6 +15,7 @@ import Footer from "../sections/home/Footer";
 import Wallet from "../sections/home/WalletOverlay";
 import TVLChart from "../sections/home/TVLChartOverlay";
 import LoadingWeb3 from "../sections/home/LoadingWeb3";
+import ErrorMessage from "../sections/home/ErrorMessage";
 
 
 let web3Modal: Web3Modal | null;
@@ -28,7 +29,6 @@ if (typeof window !== 'undefined') {
 // TBD : add option to burn sETH into ETH or WETH ?
 // TBD : which options for wallet providers ?
 // modal pop-up with link to block explorer + pop-up info about transaction outcome
-// replace window.alert with error pop-up
 // TVL : fetch events of the past month to calculate past balances ?
 // testing : kovan or capacity on OP / L1 ?
 // approval : infinite at first tx or per-transaction ?
@@ -39,6 +39,7 @@ const HomePage = () => {
   const [showWalletOverlay, setShowWalletOverlay] = useState<boolean>(false);
   const [showTVLChartOverlay, setShowTVLChartOverlay] = useState<boolean>(false);
   const [isLoadingWeb3, setIsLoadingWeb3] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const [inputValue, setInputValue] = useState<string>("");
   const [outputValue, setOutputValue] = useState<string>("");
@@ -132,7 +133,7 @@ const HomePage = () => {
           LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library);
         } else {
           if (typeof window !== 'undefined') {
-            window.alert("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
+            setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
           }
           setIsLoadingWeb3(false);
           setShowWalletOverlay(false);
@@ -221,7 +222,7 @@ const HomePage = () => {
 
       } catch (error) {
         if (typeof window !== 'undefined') {
-          window.alert('Could not connect to Web3 wallet.')
+          setErrorMessage('Could not connect to Web3 wallet.')
         }
       }
     }
@@ -569,7 +570,7 @@ const HomePage = () => {
             } else if (_hexChainId == '0xa') {
               toggleNetwork(10).catch(console.error);
             } else if (_hexChainId != '0xa' && _hexChainId != '0x1') {
-              window.alert("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
+              setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
               disconnectWallet();
             }
           }
@@ -600,7 +601,7 @@ const HomePage = () => {
       </Head>
 
       <main className={styles.main}>
-        <Home blur={showWalletOverlay || showTVLChartOverlay || isLoadingWeb3}>
+        <Home blur={showWalletOverlay || showTVLChartOverlay || isLoadingWeb3 || errorMessage.length > 0}>
           <Header
             onConnect={() => setShowWalletOverlay(account.length == 0)}
             account={account}
@@ -633,7 +634,6 @@ const HomePage = () => {
           display={showWalletOverlay}
           onConnectWallet={connectWallet}
           onClose={() => setShowWalletOverlay(false)}
-          isLoadingWeb3={isLoadingWeb3}
         />
         <StyledTVLChartOverlay
           display={showTVLChartOverlay}
@@ -641,6 +641,11 @@ const HomePage = () => {
         />
         <LoadingWeb3Overlay
           display={isLoadingWeb3}
+        />
+        <ErrorMessageOverlay
+          display={errorMessage.length > 0}
+          errorMessage={errorMessage}
+          setErrorMessage={setErrorMessage}
         />
       </main>
     </>
@@ -678,6 +683,16 @@ const StyledTVLChartOverlay = styled(TVLChart)`
 `;
 
 const LoadingWeb3Overlay = styled(LoadingWeb3)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.5); /*dim the background*/
+`;
+
+const ErrorMessageOverlay = styled(ErrorMessage)`
   position: absolute;
   top: 0;
   left: 0;
