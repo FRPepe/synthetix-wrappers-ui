@@ -132,9 +132,7 @@ const HomePage = () => {
           EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, library);
           LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library);
         } else {
-          if (typeof window !== 'undefined') {
-            setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
-          }
+          setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
           setIsLoadingWeb3(false);
           setShowWalletOverlay(false);
           disconnectWallet();
@@ -175,7 +173,7 @@ const HomePage = () => {
             await LUSD?.balanceOf(accounts[0]),
             await SUSD?.balanceOf(accounts[0]),
             await WETH?.allowance(accounts[0], EtherWrapper?.address),
-            await SETH?.allowance(accounts[0], chainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
+            await SETH?.allowance(accounts[0], network.chainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
             await LUSD?.allowance(accounts[0], LUSDwrapper?.address),
             await SUSD?.allowance(accounts[0], LUSDwrapper?.address),
             await EtherWrapper?.mintFeeRate(),
@@ -221,9 +219,9 @@ const HomePage = () => {
         setIsLoadingWeb3(false);
 
       } catch (error) {
-        if (typeof window !== 'undefined') {
-          setErrorMessage('Could not connect to Web3 wallet.')
-        }
+        setErrorMessage('Could not connect to Web3 wallet.');
+        // stop displaying loadingWeb3 overlay
+        setIsLoadingWeb3(false);
       }
     }
   };
@@ -290,7 +288,8 @@ const HomePage = () => {
                 ]
               });
             } catch (error) {
-              console.log(error);
+              setErrorMessage('Could not switch to target network.');
+              disconnectWallet();
             }
           }
         }
@@ -315,7 +314,8 @@ const HomePage = () => {
                 ]
               });
             } catch (error) {
-              console.log(error);
+              setErrorMessage('Could not switch to target network.');
+              disconnectWallet();
             }
           }
         }
@@ -396,7 +396,6 @@ const HomePage = () => {
   }
 
   const handleMaxButton = () => {
-    console.log("You clicked on the max button!")
     setInputValue(userBalances[inputCurrency as keyof typeof userBalances]);
     let outputValue = calculateInputOrOutputValue(userBalances[inputCurrency as keyof typeof userBalances], true);
     setOutputValue(outputValue);
@@ -563,16 +562,14 @@ const HomePage = () => {
       };
 
       const handleChainChanged = (_hexChainId: string) => {
-        if (typeof window !== 'undefined') {
-          if (library) { // do not trigger if wallet is disconnected
-            if (_hexChainId == '0x1') {
-              toggleNetwork(1).catch(console.error);
-            } else if (_hexChainId == '0xa') {
-              toggleNetwork(10).catch(console.error);
-            } else if (_hexChainId != '0xa' && _hexChainId != '0x1') {
-              setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
-              disconnectWallet();
-            }
+        if (library) { // do not trigger if wallet is disconnected
+          if (_hexChainId == '0x1') {
+            toggleNetwork(1).catch(console.error);
+          } else if (_hexChainId == '0xa') {
+            toggleNetwork(10).catch(console.error);
+          } else if (_hexChainId != '0xa' && _hexChainId != '0x1') {
+            setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
+            disconnectWallet();
           }
         }
       };
