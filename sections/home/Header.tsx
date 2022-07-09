@@ -49,7 +49,7 @@ const Header: FC<HeaderProps> = ({ onConnect, account, chainId, onDisconnectWall
           </NetworkSelectorContainer>
         </NetworkContainerDropdown>
         <ConnectWalletButton onClick={onConnect}>
-          <span>{account.length > 0 ? account.slice(0, 8) + ' . . . ' + account.slice(-6) : 'Connect Wallet'}</span>
+          <span>{account.length > 0 ? account.slice(0, 7) + '...' + account.slice(-5) : 'Connect Wallet'}</span>
         </ConnectWalletButton>
         <Button
           size="sm"
@@ -132,7 +132,7 @@ const StyledNetworkContainer = styled(NetworkContainer) <{ active?: boolean }>`
   /* Text */
     span {
     color: #ffffff;
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 600;
     font-size: 14px;

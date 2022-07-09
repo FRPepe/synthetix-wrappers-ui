@@ -425,7 +425,7 @@ const WrapprContainerRow = styled.div`
   width: 100%;
   padding: 30px 30px 0px 30px;
 
-  font-family: "Inter";
+  font-family: "GT America Mono";
   font-style: normal;
   font-weight: 700;
   font-size: 32px;
@@ -448,7 +448,7 @@ const BlackContainer = styled.div`
 
   span {
     /* Text */
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 400;
     font-size: 12px;
@@ -464,7 +464,7 @@ const BlackContainerRow = styled.div`
   align-items: center;
   width: 100%;
 
-  font-family: "Inter";
+  font-family: "GT America Mono";
   font-style: normal;
   font-weight: 700;
   font-size: 24px;
@@ -541,7 +541,7 @@ const CurrencyContainer = styled.div<{ active?: boolean }>`
 
   /* Text */
     span {
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 600;
     font-size: 14px;
@@ -684,7 +684,7 @@ const NumericInput = styled.input`
 	appearance: none;
 
     /* Text */
-    font-family: 'Inter';
+    font-family: 'GT America Mono';
     font-style: normal;
     font-weight: 700;
     font-size: 24px;
@@ -774,7 +774,7 @@ const TitleContainer = styled.div`
 
   /* Text */
   span {
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 700;
     font-size: 24px;
@@ -788,7 +788,7 @@ const ColumnContainer = styled.div`
   flex-direction: column;
 
   span {
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 400;
     font-size: 14px;
@@ -843,7 +843,7 @@ const GaugeProgress = styled.div<{ percentage: number }>`
     justify-content: flex-end;
     align-items: center;
     
-    font-family: 'Inter';
+    font-family: 'GT America Mono';
     font-style: normal;
     font-weight: 400;
     font-size: 12px;

@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import styled, { css } from "styled-components";
 
-import { ethers, utils, BigNumber, constants } from 'ethers';
+import { ethers, utils, constants, ContractTransaction } from 'ethers';
 import Web3Modal from "web3modal";
 
 import { ADDRESSES, ABIs } from '../contractData';
@@ -14,7 +14,7 @@ import Content from "../sections/home/Content";
 import Footer from "../sections/home/Footer";
 import Wallet from "../sections/home/WalletOverlay";
 import TVLChart from "../sections/home/TVLChartOverlay";
-import LoadingWeb3 from "../sections/home/LoadingWeb3";
+import LoadingOverlay from "../sections/home/LoadingOverlay";
 import ErrorMessage from "../sections/home/ErrorMessage";
 
 
@@ -38,7 +38,8 @@ const HomePage = () => {
   // UI
   const [showWalletOverlay, setShowWalletOverlay] = useState<boolean>(false);
   const [showTVLChartOverlay, setShowTVLChartOverlay] = useState<boolean>(false);
-  const [isLoadingWeb3, setIsLoadingWeb3] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [explorerLink, setExplorerLink] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const [inputValue, setInputValue] = useState<string>("");
@@ -52,10 +53,10 @@ const HomePage = () => {
 
 
   // wallet input
-  const [provider, setProvider] = useState<any>({});
-  const [library, setLibrary] = useState<ethers.providers.Web3Provider>();
-  const [account, setAccount] = useState<string>("");
-  const [chainId, setChainId] = useState<number>(0);
+  const [currentProvider, setCurrentProvider] = useState<any>({});
+  const [currentLibrary, setCurrentLibrary] = useState<ethers.providers.Web3Provider>();
+  const [currentAccount, setCurrentAccount] = useState<string>("");
+  const [currentChainId, setCurrentChainId] = useState<number>(0);
 
   // user balances & contract data
   const [userBalances, setUserBalances] = useState(
@@ -98,21 +99,25 @@ const HomePage = () => {
 
     // close down wallet overlay
     setShowWalletOverlay(false);
-    // open loadingWeb3 overlay
-    setIsLoadingWeb3(true);
+    // open loading overlay
+    setLoadingMessage('Web3 data loading...');
 
     if (web3Modal) {
       try {
         // initiate Web3 and fetch wallet data
         const provider = await web3Modal.connect();
-        const library = new ethers.providers.Web3Provider(provider);
+        const library = new ethers.providers.Web3Provider(
+          provider,
+          'any'
+          // typeof provider.chainId === 'number' ? provider.chainId : typeof provider.chainId === 'string' ? parseInt(provider.chainId) : 'any'
+        );
         const signer = library.getSigner();
         const accounts = await library.listAccounts();
         const network = await library.getNetwork();
-        setProvider(provider);
-        setLibrary(library);
-        if (accounts) setAccount(accounts[0]);
-        setChainId(network.chainId);
+        setCurrentProvider(provider);
+        setCurrentLibrary(library);
+        if (accounts) setCurrentAccount(accounts[0]);
+        setCurrentChainId(network.chainId);
 
         // instantiate contracts
         let SETH, WETH, SUSD, LUSD, EtherWrapper, NativeEtherWrapper, LUSDwrapper;
@@ -133,22 +138,21 @@ const HomePage = () => {
           LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library);
         } else {
           setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
-          setIsLoadingWeb3(false);
+          setLoadingMessage('');
           setShowWalletOverlay(false);
           disconnectWallet();
           return;
         }
 
         // fetch balances & wrapper contract data
-        let etherBalanceFetched;
         let maxETHFetched;
         if (network.chainId == 1) {
-          etherBalanceFetched = await signer.getBalance();
           maxETHFetched = await EtherWrapper?.maxETH();
         } else if (network.chainId == 10) {
           maxETHFetched = await EtherWrapper?.maxTokenAmount();
         }
         const [
+          etherBalanceFetched,
           WETHBalanceFetched,
           SETHBalanceFetched,
           LUSDBalanceFetched,
@@ -168,6 +172,7 @@ const HomePage = () => {
           USDcapacityFetched
         ] = await Promise.all(
           [
+            await signer.getBalance(),
             await WETH?.balanceOf(accounts[0]),
             await SETH?.balanceOf(accounts[0]),
             await LUSD?.balanceOf(accounts[0]),
@@ -188,7 +193,7 @@ const HomePage = () => {
           ]
         );
         setUserBalances({
-          ETH: etherBalanceFetched ? utils.formatEther(etherBalanceFetched) : "0",
+          ETH: utils.formatEther(etherBalanceFetched),
           WETH: utils.formatEther(WETHBalanceFetched),
           sETH: utils.formatEther(SETHBalanceFetched),
           LUSD: utils.formatEther(LUSDBalanceFetched),
@@ -215,13 +220,13 @@ const HomePage = () => {
           USDcapacity: utils.formatEther(USDcapacityFetched)
         });
 
-        // stop displaying loadingWeb3 overlay
-        setIsLoadingWeb3(false);
+        // stop displaying loading overlay
+        setLoadingMessage('');
 
       } catch (error) {
         setErrorMessage('Could not connect to Web3 wallet.');
-        // stop displaying loadingWeb3 overlay
-        setIsLoadingWeb3(false);
+        // stop displaying loading overlay
+        setLoadingMessage('');
       }
     }
   };
@@ -229,10 +234,10 @@ const HomePage = () => {
   const disconnectWallet = () => {
     if (web3Modal) {
       web3Modal.clearCachedProvider();
-      setProvider({});
-      setLibrary(undefined);
-      setAccount("");
-      setChainId(0);
+      setCurrentProvider({});
+      setCurrentLibrary(undefined);
+      setCurrentAccount("");
+      setCurrentChainId(0);
       setUserBalances({
         ETH: "0",
         WETH: "0",
@@ -266,17 +271,17 @@ const HomePage = () => {
   }
 
   const toggleNetwork = async (newChainId: number) => {
-    if (library) {
-      if (newChainId == 10 && library?.provider.request) {
+    if (currentLibrary) {
+      if (newChainId == 10 && currentLibrary?.provider.request) {
         try {
-          await library?.provider?.request({
+          await currentLibrary?.provider?.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0xa' }]
           });
         } catch (err: any) {
           if (err.code === 4902) {
             try {
-              await library?.provider?.request({
+              await currentLibrary?.provider?.request({
                 method: "wallet_addEthereumChain",
                 params: [
                   {
@@ -293,16 +298,16 @@ const HomePage = () => {
             }
           }
         }
-      } else if (newChainId == 1 && library?.provider.request) {
+      } else if (newChainId == 1 && currentLibrary?.provider.request) {
         try {
-          await library?.provider?.request({
+          await currentLibrary?.provider?.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0x1' }]
           });
         } catch (err: any) {
           if (err.code === 4902) {
             try {
-              await library?.provider?.request({
+              await currentLibrary?.provider?.request({
                 method: "wallet_addEthereumChain",
                 params: [
                   {
@@ -322,7 +327,7 @@ const HomePage = () => {
       }
       await connectWallet();
     } else {
-      setChainId(newChainId);
+      setCurrentChainId(newChainId);
     }
   }
 
@@ -332,7 +337,11 @@ const HomePage = () => {
     setOutputValue("");
     if (inputCurrency == 'ETH' || inputCurrency == 'WETH') {
       setInputCurrency('sETH');
-      setOutputCurrency('ETH');
+      if (currentChainId == 1) {
+        setOutputCurrency('ETH');
+      } else if (currentChainId == 10) {
+        setOutputCurrency('WETH');
+      }
     } else if (inputCurrency == 'sETH') {
       setInputCurrency('ETH');
       setOutputCurrency('sETH');
@@ -410,38 +419,44 @@ const HomePage = () => {
     } else if (currency == 'LUSD') {
       setOutputCurrency('sUSD');
     } else if (currency == 'sETH') {
-      setOutputCurrency('ETH');
+      if (currentChainId == 1) {
+        setOutputCurrency('ETH');
+      } else if (currentChainId == 10) {
+        setOutputCurrency('WETH');
+      }
     } else if (currency == 'sUSD') {
       setOutputCurrency('LUSD');
     }
   }
 
   const getUserBalancesAndApprovals = async (account: string) => {
+
+    let network = await currentLibrary?.getNetwork();
+    let inputChainId = network?.chainId;
+
     // instantiate contracts
     let SETH, WETH, SUSD, LUSD, EtherWrapper, NativeEtherWrapper, LUSDwrapper;
-    if (chainId == 1) { // Ethereum L1
-      SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, library);
-      WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, library);
-      SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, library);
-      LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, library);
-      NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, library);
-      EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, library);
-      LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, library);
-    } else if (chainId == 10) { // Optimism
-      SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, library);
-      WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, library);
-      SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, library);
-      LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, library);
-      EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, library);
-      LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library);
+    if (inputChainId == 1) { // Ethereum L1
+      SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary);
+      WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary);
+      SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentLibrary);
+      LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary);
+      NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary);
+      EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary);
+      LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary);
+    } else if (inputChainId == 10) { // Optimism
+      SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentLibrary);
+      WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentLibrary);
+      SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentLibrary);
+      LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentLibrary);
+      EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentLibrary);
+      LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary);
     }
 
     // fetch balances & wrapper contract data
-    let etherBalanceFetched;
-    if (chainId == 1) {
-      etherBalanceFetched = await library?.getSigner().getBalance();
-    }
+
     const [
+      etherBalanceFetched,
       WETHBalanceFetched,
       SETHBalanceFetched,
       LUSDBalanceFetched,
@@ -450,16 +465,25 @@ const HomePage = () => {
       SETHApprovalFetched,
       LUSDApprovalFetched,
       SUSDApprovalFetched,
+      WETHreservesFetched,
+      ETHcapacityFetched,
+      LUSDreservesFetched,
+      USDcapacityFetched
     ] = await Promise.all(
       [
+        await currentLibrary?.getSigner().getBalance(),
         await WETH?.balanceOf(account),
         await SETH?.balanceOf(account),
         await LUSD?.balanceOf(account),
         await SUSD?.balanceOf(account),
         await WETH?.allowance(account, EtherWrapper?.address),
-        await SETH?.allowance(account, chainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
+        await SETH?.allowance(account, inputChainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
         await LUSD?.allowance(account, LUSDwrapper?.address),
         await SUSD?.allowance(account, LUSDwrapper?.address),
+        await EtherWrapper?.getReserves(),
+        await EtherWrapper?.capacity(),
+        await LUSDwrapper?.getReserves(),
+        await LUSDwrapper?.capacity(),
       ]
     );
     setUserBalances({
@@ -475,98 +499,134 @@ const HomePage = () => {
       LUSD: utils.formatEther(LUSDApprovalFetched),
       sUSD: utils.formatEther(SUSDApprovalFetched)
     });
+    setETHwrapperData({
+      ...ETHwrapperData,
+      WETHreserves: utils.formatEther(WETHreservesFetched),
+      ETHcapacity: utils.formatEther(ETHcapacityFetched)
+    });
+    setUSDwrapperData({
+      ...USDwrapperData,
+      LUSDreserves: utils.formatEther(LUSDreservesFetched),
+      USDcapacity: utils.formatEther(USDcapacityFetched)
+    });
   }
 
   const sendApprovalTransaction = async () => {
-    if (chainId == 1) { // Ethereum L1
+    if (currentChainId == 1) { // Ethereum L1
       if (inputCurrency == 'WETH') {
-        let WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, library?.getSigner());
-        await WETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256);
+        let WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary?.getSigner());
+        await sendTransaction(WETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sETH') {
-        let SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, library?.getSigner());
+        let SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary?.getSigner());
         if (outputCurrency == 'WETH') {
-          await SETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256);
+          await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
         } else if (outputCurrency == 'ETH') {
-          await SETH.approve(ADDRESSES.ETHEREUM.NativeEtherWrapper, constants.MaxUint256);
+          await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.NativeEtherWrapper, constants.MaxUint256));
         }
       } else if (inputCurrency == 'LUSD') {
-        let LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, library?.getSigner());
-        await LUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256);
+        let LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary?.getSigner());
+        await sendTransaction(LUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sUSD') {
-        let SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, library?.getSigner());
-        await SUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256);
+        let SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentLibrary?.getSigner());
+        await sendTransaction(SUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
       }
-    } else if (chainId == 10) { // Optimism
+    } else if (currentChainId == 10) { // Optimism
       if (inputCurrency == 'WETH') {
-        let WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, library?.getSigner());
-        await WETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256);
+        let WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentLibrary?.getSigner());
+        await sendTransaction(WETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sETH') {
-        let SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, library?.getSigner());
-        await SETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256);
+        let SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentLibrary?.getSigner());
+        await sendTransaction(SETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'LUSD') {
-        let LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, library?.getSigner());
-        await LUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256);
+        let LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentLibrary?.getSigner());
+        await sendTransaction(LUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sUSD') {
-        let SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, library?.getSigner());
-        await SUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256);
+        let SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentLibrary?.getSigner());
+        await sendTransaction(SUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
       }
     }
   }
 
   const sendSwapTransaction = async () => {
-    if (chainId == 1) { // Ethereum L1
+    if (currentChainId == 1) { // Ethereum L1
       if (inputCurrency == 'ETH') {
-        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, library?.getSigner());
-        await NativeEtherWrapper.mint({ value: utils.parseEther(inputValue) });
+        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
+        await sendTransaction(NativeEtherWrapper.mint({ value: utils.parseEther(inputValue) }));
       } else if (inputCurrency == 'WETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, library?.getSigner());
-        await EtherWrapper.mint(utils.parseEther(inputValue));
+        let EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
+        await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, library?.getSigner());
-        await NativeEtherWrapper.burn(utils.parseEther(inputValue));
+        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
+        await sendTransaction(NativeEtherWrapper.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, library?.getSigner());
-        await LUSDwrapper.mint(utils.parseEther(inputValue));
+        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
+        await sendTransaction(LUSDwrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, library?.getSigner());
-        await LUSDwrapper.burn(utils.parseEther(inputValue));
+        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
+        await sendTransaction(LUSDwrapper.burn(utils.parseEther(inputValue)));
       }
-    } else if (chainId == 10) { // Optimism
+    } else if (currentChainId == 10) { // Optimism
       if (inputCurrency == 'WETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, library?.getSigner());
-        await EtherWrapper.mint(utils.parseEther(inputValue));
+        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
+        await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.NativeEtherWrapper, library?.getSigner());
-        await EtherWrapper.burn(utils.parseEther(inputValue));
+        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
+        await sendTransaction(EtherWrapper.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library?.getSigner());
-        await LUSDwrapper.mint(utils.parseEther(inputValue));
+        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
+        await sendTransaction(LUSDwrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library?.getSigner());
-        await LUSDwrapper.burn(utils.parseEther(inputValue));
+        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
+        await sendTransaction(LUSDwrapper.burn(utils.parseEther(inputValue)));
       }
     }
   }
 
-  useEffect(() => {
-    if (provider?.on) {
 
-      const handleAccountsChanged = (accounts: string[]) => {
+  const sendTransaction = async (transaction: Promise<ContractTransaction>) => {
+
+    setLoadingMessage('Please confirm the transaction...');
+
+    try {
+      const tx = await transaction;
+      const explorer = currentChainId == 1 ? 'https://etherscan.io/tx' : 'https://optimistic.etherscan.io/tx';
+      setLoadingMessage('Transaction pending...');
+      setExplorerLink(`${explorer}/${tx.hash}`);
+
+      const receipt = await tx.wait();
+      if (receipt.status === 1) {
+        setLoadingMessage('Transaction Confirmed !');
+      } else {
+        setLoadingMessage('Transaction Reverted !');
+      }
+      await getUserBalancesAndApprovals(currentAccount);
+    } catch (err: any) {
+      setLoadingMessage('');
+      setExplorerLink('');
+      setErrorMessage(err.message);
+    }
+  }
+
+  useEffect(() => {
+    if (currentProvider?.on) {
+
+      const handleAccountsChanged = async (accounts: string[]) => {
         console.log("accountsChanged", accounts);
-        if (accounts && accounts[0] && library) {
-          getUserBalancesAndApprovals(accounts[0]);
-          setAccount(accounts[0]);
+        if (accounts && accounts[0] && currentLibrary) {
+          await getUserBalancesAndApprovals(accounts[0]);
+          setCurrentAccount(accounts[0]);
         } else {
-          disconnectWallet()
+          disconnectWallet();
         };
       };
 
-      const handleChainChanged = (_hexChainId: string) => {
-        if (library) { // do not trigger if wallet is disconnected
+      const handleChainChanged = async (_hexChainId: string) => {
+        console.log("chainChanged", _hexChainId);
+        if (currentLibrary) { // do not trigger if wallet is disconnected
           if (_hexChainId == '0x1') {
-            toggleNetwork(1).catch(console.error);
+            await toggleNetwork(1).catch(console.error);
           } else if (_hexChainId == '0xa') {
-            toggleNetwork(10).catch(console.error);
+            await toggleNetwork(10).catch(console.error);
           } else if (_hexChainId != '0xa' && _hexChainId != '0x1') {
             setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
             disconnectWallet();
@@ -574,17 +634,17 @@ const HomePage = () => {
         }
       };
 
-      provider.on("accountsChanged", handleAccountsChanged);
-      provider.on("chainChanged", handleChainChanged);
+      currentProvider.on("accountsChanged", handleAccountsChanged);
+      currentProvider.on("chainChanged", handleChainChanged);
 
       return () => {
-        if (provider.removeListener) {
-          provider.removeListener("accountsChanged", handleAccountsChanged);
-          provider.removeListener("chainChanged", handleChainChanged);
+        if (currentProvider.removeListener) {
+          currentProvider.removeListener("accountsChanged", handleAccountsChanged);
+          currentProvider.removeListener("chainChanged", handleChainChanged);
         }
       };
     }
-  }, [provider]);
+  }, [currentProvider]);
 
   return (
     <>
@@ -598,13 +658,13 @@ const HomePage = () => {
       </Head>
 
       <main className={styles.main}>
-        <Home blur={showWalletOverlay || showTVLChartOverlay || isLoadingWeb3 || errorMessage.length > 0}>
+        <Home blur={showWalletOverlay || showTVLChartOverlay || loadingMessage.length > 0 || errorMessage.length > 0}>
           <Header
-            onConnect={() => setShowWalletOverlay(account.length == 0)}
-            account={account}
+            onConnect={() => setShowWalletOverlay(currentAccount.length == 0)}
+            account={currentAccount}
             onDisconnectWallet={disconnectWallet}
             toggleNetwork={toggleNetwork}
-            chainId={chainId}
+            chainId={currentChainId}
           />
           <Content
             onTVLClick={() => setShowTVLChartOverlay(true)}
@@ -636,8 +696,12 @@ const HomePage = () => {
           display={showTVLChartOverlay}
           onClose={() => setShowTVLChartOverlay(false)}
         />
-        <LoadingWeb3Overlay
-          display={isLoadingWeb3}
+        <StyledLoadingOverlay
+          display={loadingMessage.length > 0}
+          loadingMessage={loadingMessage}
+          optionalExplorerLink={explorerLink}
+          setLoadingMessage={setLoadingMessage}
+          setExplorerLink={setExplorerLink}
         />
         <ErrorMessageOverlay
           display={errorMessage.length > 0}
@@ -679,7 +743,7 @@ const StyledTVLChartOverlay = styled(TVLChart)`
   background-color: rgba(0, 0, 0, 0.5); /*dim the background*/
 `;
 
-const LoadingWeb3Overlay = styled(LoadingWeb3)`
+const StyledLoadingOverlay = styled(LoadingOverlay)`
   position: absolute;
   top: 0;
   left: 0;

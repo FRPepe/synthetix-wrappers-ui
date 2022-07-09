@@ -42,7 +42,7 @@ const Button = styled.button<ButtonProps>`
   /* Text */
   span {
     color: #ffffff;
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 600;
     font-size: 14px;

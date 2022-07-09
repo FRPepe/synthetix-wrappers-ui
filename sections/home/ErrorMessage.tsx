@@ -76,12 +76,16 @@ const Container = styled.div`
   /* Title */
   h1 {
     padding-top: 0px;
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 700;
     font-size: 18px;
     line-height: 20px;
     color: #ffffff;
+  }
+
+  span {
+    font-family: "GT America Mono";
   }
 
 `;

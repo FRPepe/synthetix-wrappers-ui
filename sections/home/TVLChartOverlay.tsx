@@ -230,7 +230,7 @@ const Container = styled.div`
     }
 
     h1 {
-        font-family: 'Inter';
+        font-family: 'GT America Mono';
         font-style: normal;
         font-weight: 700;
         font-size: 14px;
@@ -238,7 +238,7 @@ const Container = styled.div`
     }
 
     .tvl {
-        font-family: 'Inter';
+        font-family: 'GT America Mono';
         font-style: normal;
         font-weight: 700;
         font-size: 41px;
@@ -259,14 +259,14 @@ const Container = styled.div`
     }
 
 	.figure {
-		font-family: 'Inter';
+		font-family: 'GT America Mono';
 		font-weight: 700;
 		font-size: 16px;
 		line-height: 21px;
 	}
 
 	.text {
-		font-family: 'Inter';
+		font-family: 'GT America Mono';
 		font-weight: 700;
 		font-size: 12px;
 		line-height: 13px;
@@ -304,7 +304,7 @@ const StyledButton = styled(Button) <{ active?: boolean }>`
     border: none;
 
     span {
-        font-family: 'Inter';
+        font-family: 'GT America Mono';
         font-style: normal;
         font-weight: 600;
         font-size: 12px;

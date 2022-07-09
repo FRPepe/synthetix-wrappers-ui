@@ -120,7 +120,7 @@ const Container = styled.div`
   /* Title */
   h1 {
     padding-top: 10px;
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 700;
     font-size: 18px;
@@ -130,7 +130,7 @@ const Container = styled.div`
 
   /* Description */
   p {
-    font-family: "Inter";
+    font-family: "GT America Mono";
     font-style: normal;
     font-weight: 400;
     font-size: 12px;
