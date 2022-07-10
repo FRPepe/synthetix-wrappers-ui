@@ -4,6 +4,7 @@ import styles from "../styles/Home.module.css";
 
 import Header from "../sections/faq/Header";
 import Content from "../sections/faq/Content";
+import Footer from "../sections/faq/Footer";
 
 const Faq = () => {
   return (
@@ -20,6 +21,7 @@ const Faq = () => {
       <main className={styles.main}>
         <Header />
         <Content />
+        <Footer />
       </main>
     </>
   );

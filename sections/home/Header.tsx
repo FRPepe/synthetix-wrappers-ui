@@ -39,12 +39,14 @@ const Header: FC<HeaderProps> = ({ onConnect, account, chainId, onDisconnectWall
             >
               <Image src={OptimismLogo} alt="optimism-logo" priority={true} />
               <span>Optimism</span>
+              <img src={BadgeLive.src} alt="live-logo" style={{ display: chainId == 10 && account.length > 0 ? 'flex' : 'none', height: "25px", width: "25px" }} />
             </StyledNetworkContainer>
             <StyledNetworkContainer
               onClick={() => toggleNetwork(1)}
             >
               <Image src={EthereumLogo} alt="ethereum-logo" priority={true} />
               <span>Ethereum</span>
+              <img src={BadgeLive.src} alt="live-logo" style={{ display: chainId == 1 && account.length > 0 ? 'flex' : 'none', height: "25px", width: "25px" }} />
             </StyledNetworkContainer>
           </NetworkSelectorContainer>
         </NetworkContainerDropdown>
@@ -115,18 +117,6 @@ const StyledNetworkContainer = styled(NetworkContainer) <{ active?: boolean }>`
     css`
       background: rgba(130, 130, 149, 0.3);
       border-radius: 4px;
-
-      &::after {
-        display: block;
-        content: " ";
-        // TODO: Fix the issue with the svg not showing.
-        background-image: url(${BadgeLive});
-        background-size: 8px 8px;
-        height: 8px;
-        width: 8px;
-
-        border: 2px solid #ffffff;
-      }
     `}
 
   /* Text */

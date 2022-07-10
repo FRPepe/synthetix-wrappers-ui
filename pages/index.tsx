@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import styled, { css } from "styled-components";
 
@@ -26,11 +26,8 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// TBD : add option to burn sETH into ETH or WETH ?
 // TBD : which options for wallet providers ?
-// modal pop-up with link to block explorer + pop-up info about transaction outcome
 // TVL : fetch events of the past month to calculate past balances ?
-// testing : kovan or capacity on OP / L1 ?
 // approval : infinite at first tx or per-transaction ?
 // fee rate info tip by hovering : add content ?
 
@@ -48,7 +45,7 @@ const HomePage = () => {
 
 
   // tx data
-  const [inputCurrency, setInputCurrency] = useState<string>("ETH");
+  const [inputCurrency, setInputCurrency] = useState<string>("WETH");
   const [outputCurrency, setOutputCurrency] = useState<string>("sETH");
 
 
@@ -61,7 +58,6 @@ const HomePage = () => {
   // user balances & contract data
   const [userBalances, setUserBalances] = useState(
     {
-      ETH: "0",
       WETH: "0",
       sETH: "0",
       LUSD: "0",
@@ -120,13 +116,12 @@ const HomePage = () => {
         setCurrentChainId(network.chainId);
 
         // instantiate contracts
-        let SETH, WETH, SUSD, LUSD, EtherWrapper, NativeEtherWrapper, LUSDwrapper;
+        let SETH, WETH, SUSD, LUSD, EtherWrapper, LUSDwrapper;
         if (network.chainId == 1) { // Ethereum L1
           SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, library);
           WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, library);
           SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, library);
           LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, library);
-          NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, library);
           EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, library);
           LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, library);
         } else if (network.chainId == 10) { // Optimism
@@ -145,14 +140,7 @@ const HomePage = () => {
         }
 
         // fetch balances & wrapper contract data
-        let maxETHFetched;
-        if (network.chainId == 1) {
-          maxETHFetched = await EtherWrapper?.maxETH();
-        } else if (network.chainId == 10) {
-          maxETHFetched = await EtherWrapper?.maxTokenAmount();
-        }
         const [
-          etherBalanceFetched,
           WETHBalanceFetched,
           SETHBalanceFetched,
           LUSDBalanceFetched,
@@ -163,6 +151,7 @@ const HomePage = () => {
           SUSDApprovalFetched,
           ETHmintFeeRateFetched,
           ETHburnFeeRateFetched,
+          maxETHFetched,
           WETHreservesFetched,
           ETHcapacityFetched,
           USDmintFeeRateFetched,
@@ -172,17 +161,17 @@ const HomePage = () => {
           USDcapacityFetched
         ] = await Promise.all(
           [
-            await signer.getBalance(),
             await WETH?.balanceOf(accounts[0]),
             await SETH?.balanceOf(accounts[0]),
             await LUSD?.balanceOf(accounts[0]),
             await SUSD?.balanceOf(accounts[0]),
             await WETH?.allowance(accounts[0], EtherWrapper?.address),
-            await SETH?.allowance(accounts[0], network.chainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
+            await SETH?.allowance(accounts[0], EtherWrapper?.address),
             await LUSD?.allowance(accounts[0], LUSDwrapper?.address),
             await SUSD?.allowance(accounts[0], LUSDwrapper?.address),
             await EtherWrapper?.mintFeeRate(),
             await EtherWrapper?.burnFeeRate(),
+            await EtherWrapper?.maxTokenAmount(),
             await EtherWrapper?.getReserves(),
             await EtherWrapper?.capacity(),
             await LUSDwrapper?.mintFeeRate(),
@@ -193,7 +182,6 @@ const HomePage = () => {
           ]
         );
         setUserBalances({
-          ETH: utils.formatEther(etherBalanceFetched),
           WETH: utils.formatEther(WETHBalanceFetched),
           sETH: utils.formatEther(SETHBalanceFetched),
           LUSD: utils.formatEther(LUSDBalanceFetched),
@@ -239,7 +227,6 @@ const HomePage = () => {
       setCurrentAccount("");
       setCurrentChainId(0);
       setUserBalances({
-        ETH: "0",
         WETH: "0",
         sETH: "0",
         LUSD: "0",
@@ -335,15 +322,11 @@ const HomePage = () => {
     setIsMinting(!isMinting);
     setInputValue("");
     setOutputValue("");
-    if (inputCurrency == 'ETH' || inputCurrency == 'WETH') {
+    if (inputCurrency == 'WETH') {
       setInputCurrency('sETH');
-      if (currentChainId == 1) {
-        setOutputCurrency('ETH');
-      } else if (currentChainId == 10) {
-        setOutputCurrency('WETH');
-      }
+      setOutputCurrency('WETH');
     } else if (inputCurrency == 'sETH') {
-      setInputCurrency('ETH');
+      setInputCurrency('WETH');
       setOutputCurrency('sETH');
     } else if (inputCurrency == 'LUSD') {
       setInputCurrency('sUSD');
@@ -381,7 +364,7 @@ const HomePage = () => {
   const calculateInputOrOutputValue = (userEntry: string, isInput: boolean): string => {
     let newValue: string = '';
     if (isInput) {
-      if (inputCurrency == 'ETH' || inputCurrency == 'WETH') {
+      if (inputCurrency == 'WETH') {
         newValue = `${parseFloat(userEntry) * (10000 - parseFloat(ETHwrapperData.ETHmintFeeRate) * 10000) / 10000}`;
       } else if (inputCurrency == 'sETH') {
         newValue = `${parseFloat(userEntry) * (10000 - parseFloat(ETHwrapperData.ETHburnFeeRate) * 10000) / 10000}`;
@@ -391,7 +374,7 @@ const HomePage = () => {
         newValue = `${parseFloat(userEntry) * (10000 - parseFloat(USDwrapperData.USDburnFeeRate) * 10000) / 10000}`;
       }
     } else {
-      if (inputCurrency == 'ETH' || inputCurrency == 'WETH') {
+      if (inputCurrency == 'WETH') {
         newValue = `${(10000 * parseFloat(userEntry)) / (10000 - parseFloat(ETHwrapperData.ETHmintFeeRate) * 10000)}`;
       } else if (inputCurrency == 'sETH') {
         newValue = `${(10000 * parseFloat(userEntry)) / (10000 - parseFloat(ETHwrapperData.ETHburnFeeRate) * 10000)}`;
@@ -414,16 +397,12 @@ const HomePage = () => {
     setInputValue("0");
     setOutputValue("0");
     setInputCurrency(currency);
-    if (currency == 'ETH' || currency == 'WETH') {
+    if (currency == 'WETH') {
       setOutputCurrency('sETH');
     } else if (currency == 'LUSD') {
       setOutputCurrency('sUSD');
     } else if (currency == 'sETH') {
-      if (currentChainId == 1) {
-        setOutputCurrency('ETH');
-      } else if (currentChainId == 10) {
-        setOutputCurrency('WETH');
-      }
+      setOutputCurrency('WETH');
     } else if (currency == 'sUSD') {
       setOutputCurrency('LUSD');
     }
@@ -441,7 +420,6 @@ const HomePage = () => {
       WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary);
       SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentLibrary);
       LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary);
-      NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary);
       EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary);
       LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary);
     } else if (inputChainId == 10) { // Optimism
@@ -456,7 +434,6 @@ const HomePage = () => {
     // fetch balances & wrapper contract data
 
     const [
-      etherBalanceFetched,
       WETHBalanceFetched,
       SETHBalanceFetched,
       LUSDBalanceFetched,
@@ -471,13 +448,12 @@ const HomePage = () => {
       USDcapacityFetched
     ] = await Promise.all(
       [
-        await currentLibrary?.getSigner().getBalance(),
         await WETH?.balanceOf(account),
         await SETH?.balanceOf(account),
         await LUSD?.balanceOf(account),
         await SUSD?.balanceOf(account),
         await WETH?.allowance(account, EtherWrapper?.address),
-        await SETH?.allowance(account, inputChainId == 1 ? NativeEtherWrapper?.address : EtherWrapper?.address),
+        await SETH?.allowance(account, EtherWrapper?.address),
         await LUSD?.allowance(account, LUSDwrapper?.address),
         await SUSD?.allowance(account, LUSDwrapper?.address),
         await EtherWrapper?.getReserves(),
@@ -487,7 +463,6 @@ const HomePage = () => {
       ]
     );
     setUserBalances({
-      ETH: etherBalanceFetched ? utils.formatEther(etherBalanceFetched) : "0",
       WETH: utils.formatEther(WETHBalanceFetched),
       sETH: utils.formatEther(SETHBalanceFetched),
       LUSD: utils.formatEther(LUSDBalanceFetched),
@@ -518,11 +493,7 @@ const HomePage = () => {
         await sendTransaction(WETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sETH') {
         let SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary?.getSigner());
-        if (outputCurrency == 'WETH') {
-          await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
-        } else if (outputCurrency == 'ETH') {
-          await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.NativeEtherWrapper, constants.MaxUint256));
-        }
+        await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'LUSD') {
         let LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary?.getSigner());
         await sendTransaction(LUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
@@ -549,14 +520,11 @@ const HomePage = () => {
 
   const sendSwapTransaction = async () => {
     if (currentChainId == 1) { // Ethereum L1
-      if (inputCurrency == 'ETH') {
-        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
-        await sendTransaction(NativeEtherWrapper.mint({ value: utils.parseEther(inputValue) }));
-      } else if (inputCurrency == 'WETH') {
+      if (inputCurrency == 'WETH') {
         let EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
         await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.NativeEtherWrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
+        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
         await sendTransaction(NativeEtherWrapper.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
         let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
@@ -570,7 +538,7 @@ const HomePage = () => {
         let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
         await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.NativeEtherWrapper, currentLibrary?.getSigner());
+        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
         await sendTransaction(EtherWrapper.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
         let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());

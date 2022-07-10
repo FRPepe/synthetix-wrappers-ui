@@ -10,11 +10,10 @@ import LinkArrow from "../../assets/utils/link-arrow.svg";
 import Arrows from "../../assets/utils/arrows.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
 import BlueInfo from "../../assets/utils/blue-info.svg";
-import EthereumLogo from "../../assets/logos/ethereum.svg";
 import LUSDLogo from "../../assets/synths/sLUSD.svg";
 import sUSDLogo from "../../assets/synths/sUSD.png";
-import sETHLogo from "../../assets/synths/sETH.png"
-import WETHLogo from "../../assets/synths/weth.png"
+import sETHLogo from "../../assets/synths/sETH.png";
+import WETHLogo from "../../assets/synths/weth.png";
 
 type WrapprProps = {
   onTVLClick: () => void;
@@ -61,7 +60,7 @@ const Wrappr: FC<WrapprProps> = ({
 
   useEffect(() => {
     let newPercentage: number = 0;
-    if (inputCurrency == 'ETH' || inputCurrency == 'sETH' || inputCurrency == 'WETH') {
+    if (inputCurrency == 'sETH' || inputCurrency == 'WETH') {
       newPercentage = parseFloat(ETHwrapperData.WETHreserves) > parseFloat(ETHwrapperData.maxETH) ? 100 :
         Math.round((parseFloat(ETHwrapperData.WETHreserves) * 100) / parseFloat(ETHwrapperData.maxETH))
     } else if (inputCurrency == 'LUSD' || inputCurrency == 'sUSD') {
@@ -79,7 +78,7 @@ const Wrappr: FC<WrapprProps> = ({
       setSwapButtonText('Enter an amount');
     } else if (parseFloat(inputValue) > 0 && parseFloat(inputValue) > parseFloat(userBalances[inputCurrency])) {
       setSwapButtonText('Insufficient balance');
-    } else if ((inputCurrency == 'ETH' || inputCurrency == 'WETH') && parseFloat(inputValue) > parseFloat(ETHwrapperData.ETHcapacity)) {
+    } else if (inputCurrency == 'WETH' && parseFloat(inputValue) > parseFloat(ETHwrapperData.ETHcapacity)) {
       setSwapButtonText('Insufficient sETH minting capacity');
     } else if (inputCurrency == 'LUSD' && parseFloat(inputValue) > parseFloat(USDwrapperData.USDcapacity)) {
       setSwapButtonText('Insufficient sUSD minting capacity');
@@ -88,14 +87,10 @@ const Wrappr: FC<WrapprProps> = ({
     } else if (inputCurrency == 'sUSD' && parseFloat(inputValue) > parseFloat(USDwrapperData.LUSDreserves)) {
       setSwapButtonText('Insufficient LUSD reserves');
     } else {
-      if (inputCurrency == 'ETH') {
+      if (userApprovals[inputCurrency] > parseFloat(inputValue)) {
         setSwapButtonText('Swap');
       } else {
-        if (userApprovals[inputCurrency] > parseFloat(inputValue)) {
-          setSwapButtonText('Swap');
-        } else {
-          setSwapButtonText(`Allow the Wrapper to use your ${inputCurrency}`);
-        }
+        setSwapButtonText(`Allow the Wrapper to use your ${inputCurrency}`);
       }
     }
   });
@@ -153,9 +148,6 @@ const Wrappr: FC<WrapprProps> = ({
             >
               <CurrencySelectorButton>
                 <StyledCurrencyContainer>
-                  <div style={{ marginTop: "4px", display: inputCurrency == 'ETH' ? 'initial' : 'none' }} >
-                    <Image className="big" src={EthereumLogo} alt="ETH-logo" priority={true} />
-                  </div>
                   <div style={{ marginTop: "4px", display: inputCurrency == 'LUSD' ? 'initial' : 'none' }} >
                     <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
                   </div>
@@ -178,12 +170,6 @@ const Wrappr: FC<WrapprProps> = ({
                 >
                   <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
                   <span>LUSD</span>
-                </CurrencyContainer>
-                <CurrencyContainer
-                  onClick={() => handleCurrency("ETH")}
-                >
-                  <Image src={EthereumLogo} alt="ETH-logo" priority={true} />
-                  <span>ETH</span>
                 </CurrencyContainer>
                 <CurrencyContainer
                   onClick={() => handleCurrency("WETH")}
@@ -212,7 +198,7 @@ const Wrappr: FC<WrapprProps> = ({
             <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={inputValue} onChange={(e: any) => handleInputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <BlackContainerRow>
-            <span style={{ display: inputCurrency == 'ETH' || inputCurrency == 'WETH' ? 'initial' : 'none' }}>Max mintable: {parseFloat(ETHwrapperData.ETHcapacity).toFixed(2)}Ξ</span>
+            <span style={{ display: inputCurrency == 'WETH' ? 'initial' : 'none' }}>Max mintable: {parseFloat(ETHwrapperData.ETHcapacity).toFixed(2)}Ξ</span>
             <span style={{ display: inputCurrency == 'LUSD' ? 'initial' : 'none' }}>Max mintable: {parseFloat(USDwrapperData.USDcapacity).toLocaleString('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -240,9 +226,6 @@ const Wrappr: FC<WrapprProps> = ({
           </BlackContainerRow>
           <BlackContainerRow>
             <StyledCurrencyContainer2>
-              <div style={{ marginTop: "4px", display: outputCurrency == 'ETH' ? 'initial' : 'none' }} >
-                <Image className="big" src={EthereumLogo} alt="ETH-logo" priority={true} />
-              </div>
               <div style={{ marginTop: "4px", display: outputCurrency == 'LUSD' ? 'initial' : 'none' }} >
                 <Image src={LUSDLogo} alt="LUSD-logo" priority={true} />
               </div>
@@ -260,11 +243,17 @@ const Wrappr: FC<WrapprProps> = ({
             <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={outputValue} onChange={(e: any) => handleOutputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <StyledBlackContainerRow>
-            <span style={{ display: inputCurrency == 'ETH' || inputCurrency == 'WETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHmintFeeRate) * 100}%`}</span>
+            <span style={{ display: inputCurrency == 'WETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHmintFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'sETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHburnFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'LUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDmintFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'sUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDburnFeeRate) * 100}%`}</span>
-            <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true} />
+            <BlueInfoButton>
+              <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true} />
+              <TooltipBox>
+                <span>The fee rate is decided by the Grants Council</span>
+                <a href="https://docs.synthetix.io/integrations/ether-wrapper/" target="_blank">Learn More</a>
+              </TooltipBox>
+            </BlueInfoButton>
           </StyledBlackContainerRow>
         </BlackContainer>
         <SwapButton
@@ -284,7 +273,7 @@ const Wrappr: FC<WrapprProps> = ({
         <CapacityDescriptionContainer>
           <ColumnContainer>
             <span className="bold">Utilised</span>
-            <span style={{ fontWeight: "100", display: inputCurrency == 'ETH' || inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.WETHreserves).toFixed(2)}Ξ`}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.WETHreserves).toFixed(2)}Ξ`}</span>
             <span style={{ fontWeight: "100", display: inputCurrency == 'LUSD' || inputCurrency == 'sUSD' ? 'initial' : 'none' }}>{`${parseFloat(USDwrapperData.LUSDreserves).toLocaleString('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -294,7 +283,7 @@ const Wrappr: FC<WrapprProps> = ({
           </ColumnContainer>
           <ColumnContainer>
             <span className="bold">Max Capacity</span>
-            <span style={{ fontWeight: "100", display: inputCurrency == 'ETH' || inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.maxETH).toFixed(2)}Ξ`}</span>
+            <span style={{ fontWeight: "100", display: inputCurrency == 'WETH' || inputCurrency == 'sETH' ? 'initial' : 'none' }}>{`${parseFloat(ETHwrapperData.maxETH).toFixed(2)}Ξ`}</span>
             <span style={{ fontWeight: "100", display: inputCurrency == 'LUSD' || inputCurrency == 'sUSD' ? 'initial' : 'none' }}>{`${parseFloat(USDwrapperData.maxUSD).toLocaleString('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -488,24 +477,6 @@ const StyledBlackContainerRow = styled(BlackContainerRow)`
   }
 `;
 
-const BlueInfoButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: none;
-  border: none;
-  border-radius: 20px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
-
-  &:hover {
-  }
-
-  &:active {
-    box-shadow: inset -1px -1px 1px rgba(255, 255, 255, 0.15);
-  }
-`;
-
 const CurrencySelectorButton = styled(Button)`
   display: flex;
   flex-direction: row;
@@ -552,6 +523,12 @@ const CurrencyContainer = styled.div<{ active?: boolean }>`
 
 const StyledCurrencyContainer = styled(CurrencyContainer)`
   justify-content: space-between;
+  width: 100%;
+  height: 100%;
+
+  &:hover {
+  border-radius: 8px;
+  }
 
   /* Text */
   span {
@@ -580,7 +557,7 @@ const CurrencySelectorContainerMint = styled.div`
   padding: 0px;
 
   /* Basic style */
-  height: 120px;
+  height: 80px;
   width: 120px;
 
   /* Background */
@@ -871,9 +848,69 @@ const GaugeProgress = styled.div<{ percentage: number }>`
 
       &:after {
         content: '100%';
-        width: calc(100% + 6ch);
+        width: calc(100% + 5.5ch);
       }
     `}
+`;
+
+const TooltipBox = styled.div`
+  /* Hide the dropdown menu by default */
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 16px;
+  gap: 10px;
+
+  /* Basic style */
+  height: 100px;
+  width: 225px;
+
+  /* Background */
+  background: rgba(86, 86, 99, 0.9);
+
+  /* Border */
+  border: 3px solid black;
+  border-radius: 10px;
+
+  span {
+    font-family: "GT America Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+    color: #FFFFFF;
+  }
+`;
+
+const BlueInfoButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0px;
+
+  background: none;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+
+  /* Reveal the dropdown menu when the button is clicked and then if the dropdown menu is hovered */
+  &:hover,
+  > ${TooltipBox}:hover {
+    display: flex;
+
+    > ${TooltipBox} {
+      position: absolute;
+      display: flex;
+      margin-bottom: 110px;
+      margin-left: 60px;
+    }
+  }
+
+  &:active {
+    box-shadow: inset -1px -1px 1px rgba(255, 255, 255, 0.15);
+  }
 `;
 
 export default Wrappr;
