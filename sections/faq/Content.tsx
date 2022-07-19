@@ -73,7 +73,7 @@ const Content: FC = () => {
     <Container>
       <QuestionsContainer>
         {FAQs.map((faq, i) => (
-          <QuestionBox>
+          <QuestionBox key={i}>
             <TopPart>
               <Image src={faq.logo} alt="rocket-logo" priority={true} />
               <TextContainer>

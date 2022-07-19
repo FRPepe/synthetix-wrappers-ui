@@ -28,6 +28,7 @@ ChartJS.register(
 	Filler
 );
 
+
 const rand = (min: number, max: number): number => {
 	return Math.floor(Math.random() * (max - min)) + min;
 };
@@ -40,6 +41,7 @@ const randn = (min: number, max: number, n: number): number[] => {
 	return array;
 };
 
+/*
 const hourlyScale = (min: number, max: number, n: number): string[] => {
 	let array: string[] = [];
 	const step = (max - min) / n;
@@ -48,6 +50,7 @@ const hourlyScale = (min: number, max: number, n: number): string[] => {
 	}
 	return array;
 };
+*/
 
 const options = {
 	responsive: true,
@@ -72,7 +75,7 @@ const options = {
 };
 
 const data = {
-	labels: hourlyScale(6, 24, 6),
+	labels: [`6:00`, `10:00`, `14:00`, `18:00`, `22:00`, `02:00`], //hourlyScale(6, 24, 6),
 	datasets: [
 		{
 			label: 'Total ETH wrapped',
@@ -93,24 +96,239 @@ const data = {
 	],
 };
 
+interface WrapperEventObject {
+	blockNumber: number;
+	value: number;
+}
+
 type TVLChartOverlayProps = {
 	display: boolean;
 	onClose: () => void;
+	WETHreserves: string;
+	LUSDreserves: string;
+	ETHmintsLastMonthArray: WrapperEventObject[];
+	ETHburnsLastMonthArray: WrapperEventObject[];
+	USDmintsLastMonthArray: WrapperEventObject[];
+	USDburnsLastMonthArray: WrapperEventObject[];
+	latestBlockNumber: number;
 };
 
-const TVLChartOverlay: FC<TVLChartOverlayProps> = ({ display, onClose }) => {
+const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
+	display,
+	onClose,
+	WETHreserves,
+	LUSDreserves,
+	ETHmintsLastMonthArray,
+	ETHburnsLastMonthArray,
+	USDmintsLastMonthArray,
+	USDburnsLastMonthArray,
+	latestBlockNumber
+}) => {
 	const [isBrowser, setIsBrowser] = useState(false);
 	const [interval, setInterval] = useState<string>('day');
+	const [data, setData] = useState(
+		{
+			labels: [''],
+			datasets: [
+				{
+					label: 'Total ETH wrapped',
+					data: [0],
+					borderColor: '#31D8A4',
+					backgroundColor: 'hsla(161, 68%, 32%, 0.6)',
+					fill: 1,
+					tension: 0.2,
+				},
+				{
+					label: 'Total LUSD wrapped',
+					data: [0],
+					borderColor: '#00D1FF',
+					backgroundColor: 'hsla(191, 100%, 50%, 0.6)',
+					fill: "origin",
+					tension: 0.2,
+				},
+			],
+		}
+	);
+
 	const tvl: string = '1,000,000,000';
 
-	useEffect(() => {
-		setIsBrowser(true);
-	}, []);
+	const changeInterval = (intervalInput: string) => {
+		setInterval(intervalInput);
+
+		let newLabels = [];
+		let dataArrayETH = [];
+		let dataArrayLUSD = [];
+		const blocksInAnHour = Math.round((60 * 60) / 13);
+		const blocksInADay = Math.round((60 * 60 * 24) / 13);
+		if (intervalInput == 'day') {
+			for (let i = 0; i < 7; i++) {
+				let currentTime = new Date();
+				currentTime.setHours(currentTime.getHours() - i * 4);
+				newLabels[6 - i] = `${currentTime.getHours()}:00`;
+			}
+			for (let i = 0; i < 7; i++) {
+				let currentWETHreserves = parseFloat(WETHreserves);
+				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
+				console.log(filteredETHmintsLastMonthArray);
+				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
+				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
+				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
+				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayETH[6 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+
+				let currentLUSDreserves = parseFloat(LUSDreserves);
+				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
+				console.log(filteredLUSDmintsLastMonthArray);
+				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
+				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
+				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
+				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayLUSD[6 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+			}
+			let newDatasets = [
+				{
+					label: 'Total ETH wrapped',
+					data: dataArrayETH,
+					borderColor: '#31D8A4',
+					backgroundColor: 'hsla(161, 68%, 32%, 0.6)',
+					fill: 1,
+					tension: 0.2,
+				},
+				{
+					label: 'Total LUSD wrapped',
+					data: dataArrayLUSD,
+					borderColor: '#00D1FF',
+					backgroundColor: 'hsla(191, 100%, 50%, 0.6)',
+					fill: "origin",
+					tension: 0.2,
+				},
+			];
+			setData({
+				...data,
+				labels: newLabels,
+				datasets: newDatasets
+			});
+		} else if (intervalInput == 'week') {
+			for (let i = 0; i < 7; i++) {
+				let currentTime = new Date();
+				currentTime.setDate(currentTime.getDate() - i);
+				newLabels[6 - i] = String(currentTime.getMonth() + 1).padStart(2, '0') + '/' + String(currentTime.getDate()).padStart(2, '0');
+			}
+			for (let i = 0; i < 7; i++) {
+				let currentWETHreserves = parseFloat(WETHreserves);
+				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
+				console.log(filteredETHmintsLastMonthArray);
+				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
+				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
+				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
+				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayETH[6 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+
+				let currentLUSDreserves = parseFloat(LUSDreserves);
+				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
+				console.log(filteredLUSDmintsLastMonthArray);
+				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
+				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
+				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
+				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayLUSD[6 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+			}
+			let newDatasets = [
+				{
+					label: 'Total ETH wrapped',
+					data: dataArrayETH,
+					borderColor: '#31D8A4',
+					backgroundColor: 'hsla(161, 68%, 32%, 0.6)',
+					fill: 1,
+					tension: 0.2,
+				},
+				{
+					label: 'Total LUSD wrapped',
+					data: dataArrayLUSD,
+					borderColor: '#00D1FF',
+					backgroundColor: 'hsla(191, 100%, 50%, 0.6)',
+					fill: "origin",
+					tension: 0.2,
+				},
+			];
+			setData({
+				...data,
+				labels: newLabels,
+				datasets: newDatasets
+			});
+		} else if (intervalInput == `month`) {
+			for (let i = 0; i < 10; i++) {
+				let currentTime = new Date();
+				currentTime.setDate(currentTime.getDate() - i * 3);
+				newLabels[9 - i] = String(currentTime.getMonth() + 1).padStart(2, '0') + '/' + String(currentTime.getDate()).padStart(2, '0');
+			}
+			for (let i = 0; i < 10; i++) {
+				let currentWETHreserves = parseFloat(WETHreserves);
+				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
+				console.log(filteredETHmintsLastMonthArray);
+				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
+				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
+				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
+				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayETH[9 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+
+				let currentLUSDreserves = parseFloat(LUSDreserves);
+				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
+				console.log(filteredLUSDmintsLastMonthArray);
+				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
+				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
+				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
+				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
+
+				dataArrayLUSD[9 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+			}
+			let newDatasets = [
+				{
+					label: 'Total ETH wrapped',
+					data: dataArrayETH,
+					borderColor: '#31D8A4',
+					backgroundColor: 'hsla(161, 68%, 32%, 0.6)',
+					fill: 1,
+					tension: 0.2,
+				},
+				{
+					label: 'Total LUSD wrapped',
+					data: dataArrayLUSD,
+					borderColor: '#00D1FF',
+					backgroundColor: 'hsla(191, 100%, 50%, 0.6)',
+					fill: "origin",
+					tension: 0.2,
+				},
+			];
+			setData({
+				...data,
+				labels: newLabels,
+				datasets: newDatasets
+			});
+		}
+
+	};
 
 	const handleOnClose = (e: any) => {
 		e.preventDefault();
 		onClose();
 	};
+
+	useEffect(() => {
+		setIsBrowser(true);
+		changeInterval('day');
+	}, []);
 
 	return (
 		<>
@@ -129,7 +347,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({ display, onClose }) => {
 								<StyledButton
 									active={interval === 'day'}
 									onClick={() =>
-										setInterval('day')
+										changeInterval('day')
 									}
 								>
 									<span>1 Day</span>
@@ -137,7 +355,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({ display, onClose }) => {
 								<StyledButton
 									active={interval === 'week'}
 									onClick={() =>
-										setInterval('week')
+										changeInterval('week')
 									}
 								>
 									<span>1 Week</span>
@@ -145,7 +363,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({ display, onClose }) => {
 								<StyledButton
 									active={interval === 'month'}
 									onClick={() =>
-										setInterval('month')
+										changeInterval('month')
 									}
 								>
 									<span>1 Month</span>

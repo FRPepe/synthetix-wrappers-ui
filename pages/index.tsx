@@ -27,7 +27,6 @@ if (typeof window !== 'undefined') {
 }
 
 // TBD : which options for wallet providers ?
-// TVL : fetch events of the past month to calculate past balances ?
 // approval : infinite at first tx or per-transaction ?
 // fee rate info tip by hovering : add content ?
 
@@ -43,11 +42,9 @@ const HomePage = () => {
   const [outputValue, setOutputValue] = useState<string>("");
   const [isMinting, setIsMinting] = useState<boolean>(true);
 
-
   // tx data
   const [inputCurrency, setInputCurrency] = useState<string>("WETH");
   const [outputCurrency, setOutputCurrency] = useState<string>("sETH");
-
 
   // wallet input
   const [currentProvider, setCurrentProvider] = useState<any>({});
@@ -91,6 +88,19 @@ const HomePage = () => {
     }
   );
 
+  // TVL data
+
+  interface WrapperEventObject {
+    blockNumber: number;
+    value: number;
+  }
+
+  const [ETHmintsLastMonthArray, setETHMintsLastMonthArray] = useState<WrapperEventObject[]>([]);
+  const [ETHburnsLastMonthArray, setETHBurnsLastMonthArray] = useState<WrapperEventObject[]>([]);
+  const [USDmintsLastMonthArray, setUSDMintsLastMonthArray] = useState<WrapperEventObject[]>([]);
+  const [USDburnsLastMonthArray, setUSDBurnsLastMonthArray] = useState<WrapperEventObject[]>([]);
+  const [latestBlockNumber, setLatestBlockNumber] = useState<number>(0);
+
   const connectWallet = async () => {
 
     // close down wallet overlay
@@ -107,7 +117,6 @@ const HomePage = () => {
           'any'
           // typeof provider.chainId === 'number' ? provider.chainId : typeof provider.chainId === 'string' ? parseInt(provider.chainId) : 'any'
         );
-        const signer = library.getSigner();
         const accounts = await library.listAccounts();
         const network = await library.getNetwork();
         setCurrentProvider(provider);
@@ -138,6 +147,97 @@ const HomePage = () => {
           disconnectWallet();
           return;
         }
+
+        // extract TVL data from past mint/burn wrapper contract events
+
+        let latestBlockNumberFetched = await library.getBlockNumber();
+        setLatestBlockNumber(latestBlockNumberFetched);
+        const blocksInADay = Math.round((60 * 60 * 24) / 13);
+        const blocksInAMonth = blocksInADay * 30;
+
+        /*
+        let filterMintsLastDay: any = EtherWrapper.filters.Minted();
+        filterMintsLastDay.fromBlock = latestBlockNumber - blocksInADay;
+        filterMintsLastDay.toBlock = 'latest';
+        let logsMintLastDay = await library.getLogs(filterMintsLastDay);
+        const MintsLastDayArray = logsMintLastDay.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2])));
+        const MintsLastDayTotal = MintsLastDayArray.length > 0 ? MintsLastDayArray.reduce((a, b) => a + b) : 0;
+
+        let filterMintsLastWeek: any = EtherWrapper.filters.Minted();
+        filterMintsLastWeek.fromBlock = latestBlockNumber - blocksInAWeek;
+        filterMintsLastWeek.toBlock = 'latest';
+        let logsMintLastWeek = await library.getLogs(filterMintsLastWeek);
+        const MintsLastWeekArray = logsMintLastWeek.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2])));
+        const MintsLastWeekTotal = MintsLastWeekArray.length > 0 ? MintsLastWeekArray.reduce((a, b) => a + b) : 0;
+        */
+        let ETHfilterMintsLastMonth: any = EtherWrapper.filters.Minted();
+        ETHfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        ETHfilterMintsLastMonth.toBlock = 'latest';
+        let ETHlogsMintLastMonth = await library.getLogs(ETHfilterMintsLastMonth);
+        const ETHmintsLastMonthArrayFetched = ETHlogsMintLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+          }
+          return container;
+        });
+        setETHMintsLastMonthArray(ETHmintsLastMonthArrayFetched);
+        /*
+        const MintsLastMonthTotal = MintsLastMonthArray.length > 0 ? MintsLastMonthArray.reduce((a, b) => a + b) : 0;
+
+        let filterBurnsLastDay: any = EtherWrapper.filters.Burned();
+        filterBurnsLastDay.fromBlock = latestBlockNumber - blocksInADay;
+        filterBurnsLastDay.toBlock = 'latest';
+        let logsBurnLastDay = await library.getLogs(filterBurnsLastDay);
+        const BurnsLastDayArray = logsBurnLastDay.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0])));
+        const BurnsLastDayTotal = BurnsLastDayArray.length > 0 ? BurnsLastDayArray.reduce((a, b) => a + b) : 0;
+
+        let filterBurnsLastWeek: any = EtherWrapper.filters.Burned();
+        filterBurnsLastWeek.fromBlock = latestBlockNumber - blocksInAWeek;
+        filterBurnsLastWeek.toBlock = 'latest';
+        let logsBurnLastWeek = await library.getLogs(filterBurnsLastWeek);
+        const BurnsLastWeekArray = logsBurnLastWeek.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0])));
+        const BurnsLastWeekTotal = BurnsLastWeekArray.length > 0 ? BurnsLastWeekArray.reduce((a, b) => a + b) : 0;
+        */
+
+        let ETHfilterBurnsLastMonth: any = EtherWrapper.filters.Burned();
+        ETHfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        ETHfilterBurnsLastMonth.toBlock = 'latest';
+        let ETHlogsBurnLastMonth = await library.getLogs(ETHfilterBurnsLastMonth);
+        const ETHburnsLastMonthArrayFetched = ETHlogsBurnLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+          }
+          return container;
+        });
+        setETHBurnsLastMonthArray(ETHburnsLastMonthArrayFetched);
+
+        let USDfilterMintsLastMonth: any = LUSDwrapper.filters.Minted();
+        USDfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        USDfilterMintsLastMonth.toBlock = 'latest';
+        let USDlogsMintLastMonth = await library.getLogs(USDfilterMintsLastMonth);
+        const USDmintsLastMonthArrayFetched = USDlogsMintLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+          }
+          return container;
+        });
+        setUSDMintsLastMonthArray(USDmintsLastMonthArrayFetched);
+
+        let USDfilterBurnsLastMonth: any = LUSDwrapper.filters.Burned();
+        USDfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        USDfilterBurnsLastMonth.toBlock = 'latest';
+        let USDlogsBurnLastMonth = await library.getLogs(USDfilterBurnsLastMonth);
+        const USDburnsLastMonthArrayFetched = USDlogsBurnLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+          }
+          return container;
+        });
+        setUSDBurnsLastMonthArray(USDburnsLastMonthArrayFetched);
 
         // fetch balances & wrapper contract data
         const [
@@ -213,6 +313,7 @@ const HomePage = () => {
 
       } catch (error) {
         setErrorMessage('Could not connect to Web3 wallet.');
+        disconnectWallet();
         // stop displaying loading overlay
         setLoadingMessage('');
       }
@@ -414,7 +515,7 @@ const HomePage = () => {
     let inputChainId = network?.chainId;
 
     // instantiate contracts
-    let SETH, WETH, SUSD, LUSD, EtherWrapper, NativeEtherWrapper, LUSDwrapper;
+    let SETH, WETH, SUSD, LUSD, EtherWrapper, LUSDwrapper;
     if (inputChainId == 1) { // Ethereum L1
       SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary);
       WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary);
@@ -663,6 +764,13 @@ const HomePage = () => {
         <StyledTVLChartOverlay
           display={showTVLChartOverlay}
           onClose={() => setShowTVLChartOverlay(false)}
+          WETHreserves={ETHwrapperData.WETHreserves}
+          LUSDreserves={USDwrapperData.LUSDreserves}
+          ETHmintsLastMonthArray={ETHmintsLastMonthArray}
+          ETHburnsLastMonthArray={ETHburnsLastMonthArray}
+          USDmintsLastMonthArray={USDmintsLastMonthArray}
+          USDburnsLastMonthArray={USDburnsLastMonthArray}
+          latestBlockNumber={latestBlockNumber}
         />
         <StyledLoadingOverlay
           display={loadingMessage.length > 0}
