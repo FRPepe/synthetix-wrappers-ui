@@ -17,6 +17,8 @@ import TVLChart from "../sections/home/TVLChartOverlay";
 import LoadingOverlay from "../sections/home/LoadingOverlay";
 import ErrorMessage from "../sections/home/ErrorMessage";
 
+declare var window: any;
+
 const HomePage = () => {
   // UI
   const [showWalletOverlay, setShowWalletOverlay] = useState<boolean>(false);
@@ -35,6 +37,7 @@ const HomePage = () => {
 
   // wallet input
   const [walletType, setWalletType] = useState<string>('');
+  const [originalProvider, setOriginalProvider] = useState<any>({});
   const [currentProvider, setCurrentProvider] = useState<ethers.providers.Web3Provider>();
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [currentChainId, setCurrentChainId] = useState<number>(0);
@@ -96,10 +99,12 @@ const HomePage = () => {
     setLoadingMessage('Web3 data loading...');
 
     setWalletType(providerInput);
+    let originalProvider;
     let provider;
     if(providerInput == 'metamask') {
+      originalProvider = window.ethereum;
       try {
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        provider = new ethers.providers.Web3Provider(originalProvider, "any");
         await provider.send("eth_requestAccounts", []);
       } catch(error) {
         setLoadingMessage('');
@@ -107,14 +112,14 @@ const HomePage = () => {
       }
     } else if(providerInput == 'walletconnect') {
       try {
-        const WCprovider = new WalletConnectProvider({
+        originalProvider = new WalletConnectProvider({
           rpc: {
             1: "https://mainnet.infura.io/v3/",
             10: "https://mainnet.optimism.io/"
           }
         });
-        await WCprovider.enable();
-        provider = new ethers.providers.Web3Provider(WCprovider, "any");
+        await originalProvider.enable();
+        provider = new ethers.providers.Web3Provider(originalProvider, "any");
       } catch(error) {
         setLoadingMessage('');
         setErrorMessage('Could not connect to Web3 wallet.');
@@ -128,6 +133,7 @@ const HomePage = () => {
         // initiate Web3 and fetch wallet data
         const accounts = await provider.listAccounts();
         const network = await provider.getNetwork();
+        setOriginalProvider(originalProvider);
         setCurrentProvider(provider);
         if (accounts) setCurrentAccount(accounts[0]);
         setCurrentChainId(network.chainId);
@@ -701,7 +707,7 @@ const HomePage = () => {
   }
 
   useEffect(() => {
-    if (currentProvider?.provider.on) {
+    if (originalProvider.on) {
 
       const handleAccountsChanged = async (accounts: string[]) => {
         console.log("accountsChanged", accounts);
@@ -741,13 +747,13 @@ const HomePage = () => {
         }
       };
 
-      currentProvider.provider.on("accountsChanged", handleAccountsChanged);
-      currentProvider.provider.on("chainChanged", handleChainChanged);
+      originalProvider.on("accountsChanged", handleAccountsChanged);
+      originalProvider.on("chainChanged", handleChainChanged);
 
       return () => {
-        if (currentProvider.removeListener) {
-          currentProvider.removeListener("accountsChanged", handleAccountsChanged);
-          currentProvider.removeListener("chainChanged", handleChainChanged);
+        if (originalProvider.removeListener) {
+          originalProvider.removeListener("accountsChanged", handleAccountsChanged);
+          originalProvider.removeListener("chainChanged", handleChainChanged);
         }
       };
     }
