@@ -12,6 +12,7 @@ import {
 	Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import CoinGecko from 'coingecko-api';
 
 import Button from '../../components/Button';
 
@@ -28,30 +29,6 @@ ChartJS.register(
 	Filler
 );
 
-
-const rand = (min: number, max: number): number => {
-	return Math.floor(Math.random() * (max - min)) + min;
-};
-
-const randn = (min: number, max: number, n: number): number[] => {
-	let array: number[] = [];
-	for (let i = 0; i < n; i++) {
-		array.push(rand(min, max));
-	}
-	return array;
-};
-
-/*
-const hourlyScale = (min: number, max: number, n: number): string[] => {
-	let array: string[] = [];
-	const step = (max - min) / n;
-	for (let i = min; i < max; i += step) {
-		array.push(Math.floor(i) + ':00');
-	}
-	return array;
-};
-*/
-
 const options = {
 	responsive: true,
 	plugins: {
@@ -63,7 +40,7 @@ const options = {
 			type: 'time',
 			ticks: {
 				autoSkip: true,
-				maxTicksLimit: 10
+				maxTicksLimit: 11
 			}
 		}],
 	},
@@ -72,28 +49,6 @@ const options = {
 			display: false,
 		}
 	},
-};
-
-const data = {
-	labels: [`6:00`, `10:00`, `14:00`, `18:00`, `22:00`, `02:00`], //hourlyScale(6, 24, 6),
-	datasets: [
-		{
-			label: 'Total ETH wrapped',
-			data: randn(480_000, 520_000, 100),
-			borderColor: '#31D8A4',
-			backgroundColor: 'hsla(161, 68%, 32%, 0.6)',
-			fill: 1,
-			tension: 0.2,
-		},
-		{
-			label: 'Total LUSD wrapped',
-			data: randn(440_000, 470_000, 100),
-			borderColor: '#00D1FF',
-			backgroundColor: 'hsla(191, 100%, 50%, 0.6)',
-			fill: "origin",
-			tension: 0.2,
-		},
-	],
 };
 
 interface WrapperEventObject {
@@ -111,6 +66,8 @@ type TVLChartOverlayProps = {
 	USDmintsLastMonthArray: WrapperEventObject[];
 	USDburnsLastMonthArray: WrapperEventObject[];
 	latestBlockNumber: number;
+	setErrorMessage: (errorMessage: string) => void;
+	setLoadingMessage: (loadingMessage: string) => void;
 };
 
 const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
@@ -122,7 +79,9 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 	ETHburnsLastMonthArray,
 	USDmintsLastMonthArray,
 	USDburnsLastMonthArray,
-	latestBlockNumber
+	latestBlockNumber,
+	setErrorMessage,
+	setLoadingMessage
 }) => {
 	const [isBrowser, setIsBrowser] = useState(false);
 	const [interval, setInterval] = useState<string>('day');
@@ -149,12 +108,18 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 			],
 		}
 	);
+	const [tvl, setTVL] = useState<string>('0');
+	const [WETHtvl, setWETHtvl] = useState<string>('0');
+	const [LUSDtvl, setLUSDtvl] = useState<string>('0');
+	const [ETHprice, setETHprice] = useState<number>(0);
+	const [LUSDprice, setLUSDprice] = useState<number>(0);
+	
 
-	const tvl: string = '1,000,000,000';
-
-	const changeInterval = (intervalInput: string) => {
+	const changeInterval = async (intervalInput: string) => {
+		setLoadingMessage('Loading price data...');
 		setInterval(intervalInput);
 
+		const CoinGeckoClient = new CoinGecko();
 		let newLabels = [];
 		let dataArrayETH = [];
 		let dataArrayLUSD = [];
@@ -169,25 +134,23 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 			for (let i = 0; i < 7; i++) {
 				let currentWETHreserves = parseFloat(WETHreserves);
 				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
-				console.log(filteredETHmintsLastMonthArray);
 				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
 				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
 				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
 				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayETH[6 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+				dataArrayETH[6 - i] = Math.round((currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate) * ETHprice);
 
 				let currentLUSDreserves = parseFloat(LUSDreserves);
 				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
-				console.log(filteredLUSDmintsLastMonthArray);
 				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
 				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 4 * blocksInAnHour);
 				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
 				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayLUSD[6 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+				dataArrayLUSD[6 - i] = Math.round((currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate) * LUSDprice);
 			}
 			let newDatasets = [
 				{
@@ -217,29 +180,58 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 				let currentTime = new Date();
 				currentTime.setDate(currentTime.getDate() - i);
 				newLabels[6 - i] = String(currentTime.getMonth() + 1).padStart(2, '0') + '/' + String(currentTime.getDate()).padStart(2, '0');
-			}
-			for (let i = 0; i < 7; i++) {
+			
 				let currentWETHreserves = parseFloat(WETHreserves);
 				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
-				console.log(filteredETHmintsLastMonthArray);
 				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
 				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
 				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
 				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayETH[6 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+				let ETHpriceAtPastDate;
+				if (i == 0) {
+					ETHpriceAtPastDate = ETHprice;
+				} else {
+					try {
+					let fetchedData = await CoinGeckoClient.coins.fetchHistory('ethereum', {
+						date: `${currentTime.getDate()}-${currentTime.getMonth() + 1 >= 10 ? currentTime.getMonth() + 1 : `0${currentTime.getMonth() + 1}`}-${currentTime.getFullYear()}`
+					  });
+					  ETHpriceAtPastDate = fetchedData.data.market_data.current_price.usd;
+					} catch {
+						setLoadingMessage('');
+						setErrorMessage('Could not fetch price data');
+						return;
+					}
+				}
+
+				dataArrayETH[6 - i] = Math.round((currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate) * ETHpriceAtPastDate);
 
 				let currentLUSDreserves = parseFloat(LUSDreserves);
 				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
-				console.log(filteredLUSDmintsLastMonthArray);
 				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
 				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * blocksInADay);
 				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
 				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayLUSD[6 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+				let LUSDpriceAtPastDate;
+				if (i == 0) {
+					LUSDpriceAtPastDate = LUSDprice;
+				} else {
+					try {
+					let fetchedData = await CoinGeckoClient.coins.fetchHistory('liquity-usd', {
+						date: `${currentTime.getDate()}-${currentTime.getMonth() + 1 >= 10 ? currentTime.getMonth() + 1 : `0${currentTime.getMonth() + 1}`}-${currentTime.getFullYear()}`
+					  });
+					  LUSDpriceAtPastDate = fetchedData.data.market_data.current_price.usd;
+					} catch {
+						setLoadingMessage('');
+						setErrorMessage('Could not fetch price data');
+						return;
+					}
+				}
+
+				dataArrayLUSD[6 - i] = Math.round((currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate) * LUSDpriceAtPastDate);
 			}
 			let newDatasets = [
 				{
@@ -265,33 +257,62 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 				datasets: newDatasets
 			});
 		} else if (intervalInput == `month`) {
-			for (let i = 0; i < 10; i++) {
+			for (let i = 0; i < 11; i++) {
 				let currentTime = new Date();
 				currentTime.setDate(currentTime.getDate() - i * 3);
-				newLabels[9 - i] = String(currentTime.getMonth() + 1).padStart(2, '0') + '/' + String(currentTime.getDate()).padStart(2, '0');
-			}
-			for (let i = 0; i < 10; i++) {
+				newLabels[10 - i] = String(currentTime.getMonth() + 1).padStart(2, '0') + '/' + String(currentTime.getDate()).padStart(2, '0');
+
 				let currentWETHreserves = parseFloat(WETHreserves);
 				let filteredETHmintsLastMonthArray = ETHmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
-				console.log(filteredETHmintsLastMonthArray);
 				let filteredETHmintsLastMonthArrayValues = filteredETHmintsLastMonthArray.map(el => el.value);
 				let sumOfETHmintsSinceDate = filteredETHmintsLastMonthArrayValues.length > 0 ? filteredETHmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredETHburnsLastMonthArray = ETHburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
 				let filteredETHburnsLastMonthArrayValues = filteredETHburnsLastMonthArray.map(el => el.value);
 				let sumOfETHburnsSinceDate = filteredETHburnsLastMonthArrayValues.length > 0 ? filteredETHburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayETH[9 - i] = currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate;
+				let ETHpriceAtPastDate;
+				if (i == 0) {
+					ETHpriceAtPastDate = ETHprice;
+				} else {
+					try {
+					let fetchedData = await CoinGeckoClient.coins.fetchHistory('ethereum', {
+						date: `${currentTime.getDate()}-${currentTime.getMonth() + 1 >= 10 ? currentTime.getMonth() + 1 : `0${currentTime.getMonth() + 1}`}-${currentTime.getFullYear()}`
+					  });
+					  ETHpriceAtPastDate = fetchedData.data.market_data.current_price.usd;
+					} catch {
+						setLoadingMessage('');
+						setErrorMessage('Could not fetch price data');
+						return;
+					}
+				}
+
+				dataArrayETH[10 - i] = Math.round((currentWETHreserves - sumOfETHmintsSinceDate + sumOfETHburnsSinceDate) * ETHpriceAtPastDate);
 
 				let currentLUSDreserves = parseFloat(LUSDreserves);
 				let filteredLUSDmintsLastMonthArray = USDmintsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
-				console.log(filteredLUSDmintsLastMonthArray);
 				let filteredLUSDmintsLastMonthArrayValues = filteredLUSDmintsLastMonthArray.map(el => el.value);
 				let sumOfLUSDmintsSinceDate = filteredLUSDmintsLastMonthArrayValues.length > 0 ? filteredLUSDmintsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 				let filteredLUSDburnsLastMonthArray = USDburnsLastMonthArray.filter(el => el.blockNumber > latestBlockNumber - i * 3 * blocksInADay);
 				let filteredLUSDburnsLastMonthArrayValues = filteredLUSDburnsLastMonthArray.map(el => el.value);
 				let sumOfLUSDburnsSinceDate = filteredLUSDburnsLastMonthArrayValues.length > 0 ? filteredLUSDburnsLastMonthArrayValues.reduce((a, b) => a + b) : 0;
 
-				dataArrayLUSD[9 - i] = currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate;
+				let LUSDpriceAtPastDate;
+				if (i == 0) {
+					LUSDpriceAtPastDate = LUSDprice;
+				} else {
+					try {
+					let fetchedData = await CoinGeckoClient.coins.fetchHistory('liquity-usd', {
+						date: `${currentTime.getDate()}-${currentTime.getMonth() + 1 >= 10 ? currentTime.getMonth() + 1 : `0${currentTime.getMonth() + 1}`}-${currentTime.getFullYear()}`
+					  });
+					  LUSDpriceAtPastDate = fetchedData.data.market_data.current_price.usd;
+					} catch {
+						setLoadingMessage('');
+						setErrorMessage('Could not fetch price data');
+						return;
+					}
+				}
+
+				dataArrayLUSD[10 - i] = Math.round((currentLUSDreserves - sumOfLUSDmintsSinceDate + sumOfLUSDburnsSinceDate) * LUSDpriceAtPastDate);
 			}
 			let newDatasets = [
 				{
@@ -317,7 +338,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 				datasets: newDatasets
 			});
 		}
-
+		setLoadingMessage('');
 	};
 
 	const handleOnClose = (e: any) => {
@@ -328,7 +349,49 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 	useEffect(() => {
 		setIsBrowser(true);
 		changeInterval('day');
-	}, []);
+		const CoinGeckoClient = new CoinGecko();
+		const fetchData = async () => {
+			let result;
+			try {
+			result = await CoinGeckoClient.simple.price({
+				ids: ['ethereum', 'liquity-usd'],
+				vs_currencies: ['usd'],
+			});
+		} catch {
+			setErrorMessage('Could not fetch price data');
+			return;
+		}
+			setETHprice(result.data.ethereum.usd);
+			setLUSDprice(result.data[`liquity-usd`].usd);
+			let calculatedWETHtvl = parseFloat(WETHreserves) * result.data.ethereum.usd;
+			setWETHtvl(calculatedWETHtvl.toLocaleString('en-US', {
+				style: 'currency',
+				currency: 'USD',
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+			  }));
+			let calculatedLUSDtvl = parseFloat(LUSDreserves) * result.data[`liquity-usd`].usd;
+			setLUSDtvl(calculatedLUSDtvl.toLocaleString('en-US', {
+				style: 'currency',
+				currency: 'USD',
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+			  }));
+			let calculatedTotalTVL = calculatedWETHtvl + calculatedLUSDtvl;
+			setTVL(calculatedTotalTVL.toLocaleString('en-US', {
+				style: 'currency',
+				currency: 'USD',
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+			  }));
+		}
+		try {
+			fetchData();
+		}
+		catch {
+			setErrorMessage('Failed to fetch TVL data');
+		}
+	}, [WETHreserves, LUSDreserves]);
 
 	return (
 		<>
@@ -341,7 +404,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 									<h1>TOTAL VALUE LOCKED</h1>
 									<Image className="tooltip" alt="tooltip" src={WhiteInfo} priority={true} />
 								</StyledRow>
-								<span className="tvl">${tvl}</span>
+								<span className="tvl">{tvl}</span>
 							</Column>
 							<Row>
 								<StyledButton
@@ -382,11 +445,11 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 						<DescriptionRow>
 							<Column>
 								<span className="text, green">Total ETH wrapped</span>
-								<span className="figure">$512,345,678</span>
+								<span className="figure">{WETHtvl}</span>
 							</Column>
 							<Column>
 								<span className="text, blue">Total LUSD wrapped</span>
-								<span className="figure">$487,654,322</span>
+								<span className="figure">{LUSDtvl}</span>
 							</Column>
 						</DescriptionRow>
 					</Container>

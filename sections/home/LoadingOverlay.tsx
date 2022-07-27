@@ -34,20 +34,20 @@ const LoadingOverlay: FC<LoadingProps> = ({ display, loadingMessage, optionalExp
               </Button>
             </CrossContainer>
             <h1 style={{ textAlign: "center", marginBottom: "15px" }}>{loadingMessage}</h1>
-            <SpinnerContainer active={loadingMessage == 'Web3 data loading...' || loadingMessage == 'Please confirm the transaction...' || loadingMessage == 'Transaction pending...'}>
+            <SpinnerContainer active={loadingMessage != 'Transaction Confirmed !' && loadingMessage != 'Transaction Reverted !'}>
               <img alt="spinner" src={Spinner.src} style={{ height: "28px", width: "28px" }} />
             </SpinnerContainer>
-            <div style={{ display: loadingMessage == 'Transaction Confirmed !' ? "flex" : "none", height: "28px", width: "28px", marginBottom: "5px" }}>
+            <MessageContainer active={loadingMessage == 'Transaction Confirmed !'}>
               <Image src={Success} alt="success-icon" priority={true} />
-            </div>
-            <div style={{ display: loadingMessage == 'Transaction Reverted !' ? "flex" : "none", height: "28px", width: "28px", marginBottom: "5px" }}>
+            </MessageContainer>
+            <MessageContainer active={loadingMessage == 'Transaction Reverted !'}>
               <Image src={Revert} alt="revert-icon" priority={true} />
-            </div>
-            <div style={{ display: optionalExplorerLink.length > 0 ? "flex" : "none", marginTop: "5px" }}>
+            </MessageContainer>
+            <LinkContainer active={optionalExplorerLink.length > 0 && (loadingMessage == 'Transaction Reverted !' || loadingMessage == 'Transaction Confirmed !' || loadingMessage == 'Transaction pending...')}>
               <a href={optionalExplorerLink} target="_blank" >
                 <span>{optionalExplorerLink.slice(0, 28) + '...' + optionalExplorerLink.slice(-6)}</span>
               </a>
-            </div>
+            </LinkContainer>
           </Container>
         </Overlay>
       )}
@@ -122,6 +122,30 @@ const CrossContainer = styled.div<{ active: boolean }>`
   flex-direction: row;
   justify-content: flex-end;
   margin-bottom: 5px;
+
+  ${(props) =>
+    props.active &&
+    css`
+      display: flex;
+    `}
+`;
+
+const LinkContainer = styled.div<{ active: boolean }>`
+  margin-top: 5px;
+  display: none;
+
+  ${(props) =>
+    props.active &&
+    css`
+      display: flex;
+    `}
+`;
+
+const MessageContainer = styled.div<{ active: boolean }>`
+  height: 28px;
+  width: 28px;
+  marginBottom: 5px;
+  display: none;
 
   ${(props) =>
     props.active &&

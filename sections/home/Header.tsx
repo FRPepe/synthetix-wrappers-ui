@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC } from "react";
 import styled, { css } from "styled-components";
 import Image from "next/image";
 

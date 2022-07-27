@@ -7,13 +7,11 @@ import Button from "../../components/Button";
 import CrossIcon from "../../assets/utils/cross.svg";
 import MetamaskIcon from "../../assets/wallets/metamask.svg";
 import ConnectMobileIcon from "../../assets/wallets/connect-mobile.svg";
-import LedgerIcon from "../../assets/wallets/ledger.svg";
-import TrezorIcon from "../../assets/wallets/trezor.svg";
 
 type WalletOverlayProps = {
   display: boolean;
   onClose: () => void;
-  onConnectWallet: () => void;
+  onConnectWallet: (providerInput: string) => void;
 };
 
 const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose, onConnectWallet }) => {
@@ -43,39 +41,17 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose, onConnectWall
             <p>Please select a wallet to connect to this dapp:</p>
             <ListContainer>
               <NetworkButton
-                onClick={onConnectWallet}
+                onClick={() => onConnectWallet('metamask')}
               >
                 <Image src={MetamaskIcon} alt="metamask-icon" priority={true} />
                 <span>Browser Wallet</span>
               </NetworkButton>
               <NetworkButton
-                onClick={() => console.log("You clicked on the mobile wallet button!")
-                }
+                onClick={() => onConnectWallet('walletconnect')}
               >
                 <Image src={ConnectMobileIcon} alt="connect-mobile-icon" priority={true} />
-                <span>Connect Mobile Wallet</span>
+                <span>Wallet Connect</span>
               </NetworkButton>
-              <NetworkButton
-                onClick={() =>
-                  console.log("You clicked on the connect ledger button!")
-                }
-              >
-                <Image src={LedgerIcon} alt="ledger-icon" priority={true} />
-                <span>Connect Ledger</span>
-              </NetworkButton>
-              <NetworkButton
-                onClick={() => console.log("You clicked on the trezor button!")}
-              >
-                <Image src={TrezorIcon} alt="trezor-icon" priority={true} />
-                <span>Trezor</span>
-              </NetworkButton>
-              <SeeMoreButton
-                onClick={() =>
-                  console.log("You clicked on the see more button!")
-                }
-              >
-                <span>See More</span>
-              </SeeMoreButton>
             </ListContainer>
           </Container>
         </Overlay>
@@ -104,7 +80,7 @@ const Container = styled.div`
 
   /* Basic styling */
   width: 370px;
-  height: 440px;
+  height: 320px;
 
   /* Background  */
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
@@ -201,19 +177,6 @@ const NetworkButton = styled(StyledButton)`
   align-items: center;
   gap: 20px;
   padding-left: 24px;
-`;
-
-const SeeMoreButton = styled(StyledButton)`
-  width: 76px;
-  height: 28px;
-  border-radius: 4px;
-  margin-top: 10px;
-  margin-bottom: 20px;
-
-  /* Text */
-  span {
-    font-size: 12px;
-  }
 `;
 
 export default WalletOverlay;

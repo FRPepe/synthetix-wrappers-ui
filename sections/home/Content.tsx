@@ -2,8 +2,6 @@ import { FC, useState, useEffect } from "react";
 import styled, { css } from "styled-components";
 import Image from "next/image";
 
-import { ethers, utils, BigNumber } from 'ethers';
-
 import Button from "../../components/Button";
 
 import LinkArrow from "../../assets/utils/link-arrow.svg";
@@ -182,9 +180,7 @@ const Wrappr: FC<WrapprProps> = ({
                 <CurrencyContainer
                   onClick={() => handleCurrency("sUSD")}
                 >
-                  <div>
                     <img src={sUSDLogo.src} alt="sUSD-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
-                  </div>
                   <span>sUSD</span>
                 </CurrencyContainer>
                 <CurrencyContainer
@@ -471,10 +467,6 @@ const BlackContainerRow = styled.div`
 const StyledBlackContainerRow = styled(BlackContainerRow)`
   justify-content: flex-start;
   gap: 4px;
-
-  .tooltip:hover {
-    // TODO
-  }
 `;
 
 const CurrencySelectorButton = styled(Button)`

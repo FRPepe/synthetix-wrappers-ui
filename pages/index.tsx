@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
-import styled, { css } from "styled-components";
+import styled, { createGlobalStyle, css } from "styled-components";
 
 import { ethers, utils, constants, ContractTransaction } from 'ethers';
-import Web3Modal from "web3modal";
+import WalletConnectProvider from "@walletconnect/web3-provider";
 
 import { ADDRESSES, ABIs } from '../contractData';
 
@@ -16,19 +16,6 @@ import Wallet from "../sections/home/WalletOverlay";
 import TVLChart from "../sections/home/TVLChartOverlay";
 import LoadingOverlay from "../sections/home/LoadingOverlay";
 import ErrorMessage from "../sections/home/ErrorMessage";
-
-
-let web3Modal: Web3Modal | null;
-if (typeof window !== 'undefined') {
-  web3Modal = new Web3Modal({
-    cacheProvider: true, // optional
-    providerOptions: {} // required
-  });
-}
-
-// TBD : which options for wallet providers ?
-// approval : infinite at first tx or per-transaction ?
-// fee rate info tip by hovering : add content ?
 
 const HomePage = () => {
   // UI
@@ -47,8 +34,8 @@ const HomePage = () => {
   const [outputCurrency, setOutputCurrency] = useState<string>("sETH");
 
   // wallet input
-  const [currentProvider, setCurrentProvider] = useState<any>({});
-  const [currentLibrary, setCurrentLibrary] = useState<ethers.providers.Web3Provider>();
+  const [walletType, setWalletType] = useState<string>('');
+  const [currentProvider, setCurrentProvider] = useState<ethers.providers.Web3Provider>();
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [currentChainId, setCurrentChainId] = useState<number>(0);
 
@@ -101,45 +88,66 @@ const HomePage = () => {
   const [USDburnsLastMonthArray, setUSDBurnsLastMonthArray] = useState<WrapperEventObject[]>([]);
   const [latestBlockNumber, setLatestBlockNumber] = useState<number>(0);
 
-  const connectWallet = async () => {
+  const connectWallet = async (providerInput: string) => {
 
     // close down wallet overlay
     setShowWalletOverlay(false);
     // open loading overlay
     setLoadingMessage('Web3 data loading...');
 
-    if (web3Modal) {
+    setWalletType(providerInput);
+    let provider;
+    if(providerInput == 'metamask') {
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        await provider.send("eth_requestAccounts", []);
+      } catch(error) {
+        setLoadingMessage('');
+        setErrorMessage('Could not connect to Web3 wallet.');
+      }
+    } else if(providerInput == 'walletconnect') {
+      try {
+        const WCprovider = new WalletConnectProvider({
+          rpc: {
+            1: "https://mainnet.infura.io/v3/",
+            10: "https://mainnet.optimism.io/"
+          }
+        });
+        await WCprovider.enable();
+        provider = new ethers.providers.Web3Provider(WCprovider, "any");
+      } catch(error) {
+        setLoadingMessage('');
+        setErrorMessage('Could not connect to Web3 wallet.');
+      }
+    } else {
+      return;
+    }
+
+    if(provider) {
       try {
         // initiate Web3 and fetch wallet data
-        const provider = await web3Modal.connect();
-        const library = new ethers.providers.Web3Provider(
-          provider,
-          'any'
-          // typeof provider.chainId === 'number' ? provider.chainId : typeof provider.chainId === 'string' ? parseInt(provider.chainId) : 'any'
-        );
-        const accounts = await library.listAccounts();
-        const network = await library.getNetwork();
+        const accounts = await provider.listAccounts();
+        const network = await provider.getNetwork();
         setCurrentProvider(provider);
-        setCurrentLibrary(library);
         if (accounts) setCurrentAccount(accounts[0]);
         setCurrentChainId(network.chainId);
 
         // instantiate contracts
         let SETH, WETH, SUSD, LUSD, EtherWrapper, LUSDwrapper;
         if (network.chainId == 1) { // Ethereum L1
-          SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, library);
-          WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, library);
-          SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, library);
-          LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, library);
-          EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, library);
-          LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, library);
+          SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, provider);
+          WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, provider);
+          SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, provider);
+          LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, provider);
+          EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, provider);
+          LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, provider);
         } else if (network.chainId == 10) { // Optimism
-          SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, library);
-          WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, library);
-          SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, library);
-          LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, library);
-          EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, library);
-          LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, library);
+          SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, provider);
+          WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, provider);
+          SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, provider);
+          LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, provider);
+          EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, provider);
+          LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, provider);
         } else {
           setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
           setLoadingMessage('');
@@ -147,97 +155,6 @@ const HomePage = () => {
           disconnectWallet();
           return;
         }
-
-        // extract TVL data from past mint/burn wrapper contract events
-
-        let latestBlockNumberFetched = await library.getBlockNumber();
-        setLatestBlockNumber(latestBlockNumberFetched);
-        const blocksInADay = Math.round((60 * 60 * 24) / 13);
-        const blocksInAMonth = blocksInADay * 30;
-
-        /*
-        let filterMintsLastDay: any = EtherWrapper.filters.Minted();
-        filterMintsLastDay.fromBlock = latestBlockNumber - blocksInADay;
-        filterMintsLastDay.toBlock = 'latest';
-        let logsMintLastDay = await library.getLogs(filterMintsLastDay);
-        const MintsLastDayArray = logsMintLastDay.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2])));
-        const MintsLastDayTotal = MintsLastDayArray.length > 0 ? MintsLastDayArray.reduce((a, b) => a + b) : 0;
-
-        let filterMintsLastWeek: any = EtherWrapper.filters.Minted();
-        filterMintsLastWeek.fromBlock = latestBlockNumber - blocksInAWeek;
-        filterMintsLastWeek.toBlock = 'latest';
-        let logsMintLastWeek = await library.getLogs(filterMintsLastWeek);
-        const MintsLastWeekArray = logsMintLastWeek.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2])));
-        const MintsLastWeekTotal = MintsLastWeekArray.length > 0 ? MintsLastWeekArray.reduce((a, b) => a + b) : 0;
-        */
-        let ETHfilterMintsLastMonth: any = EtherWrapper.filters.Minted();
-        ETHfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        ETHfilterMintsLastMonth.toBlock = 'latest';
-        let ETHlogsMintLastMonth = await library.getLogs(ETHfilterMintsLastMonth);
-        const ETHmintsLastMonthArrayFetched = ETHlogsMintLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
-          }
-          return container;
-        });
-        setETHMintsLastMonthArray(ETHmintsLastMonthArrayFetched);
-        /*
-        const MintsLastMonthTotal = MintsLastMonthArray.length > 0 ? MintsLastMonthArray.reduce((a, b) => a + b) : 0;
-
-        let filterBurnsLastDay: any = EtherWrapper.filters.Burned();
-        filterBurnsLastDay.fromBlock = latestBlockNumber - blocksInADay;
-        filterBurnsLastDay.toBlock = 'latest';
-        let logsBurnLastDay = await library.getLogs(filterBurnsLastDay);
-        const BurnsLastDayArray = logsBurnLastDay.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0])));
-        const BurnsLastDayTotal = BurnsLastDayArray.length > 0 ? BurnsLastDayArray.reduce((a, b) => a + b) : 0;
-
-        let filterBurnsLastWeek: any = EtherWrapper.filters.Burned();
-        filterBurnsLastWeek.fromBlock = latestBlockNumber - blocksInAWeek;
-        filterBurnsLastWeek.toBlock = 'latest';
-        let logsBurnLastWeek = await library.getLogs(filterBurnsLastWeek);
-        const BurnsLastWeekArray = logsBurnLastWeek.map((el) => parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0])));
-        const BurnsLastWeekTotal = BurnsLastWeekArray.length > 0 ? BurnsLastWeekArray.reduce((a, b) => a + b) : 0;
-        */
-
-        let ETHfilterBurnsLastMonth: any = EtherWrapper.filters.Burned();
-        ETHfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        ETHfilterBurnsLastMonth.toBlock = 'latest';
-        let ETHlogsBurnLastMonth = await library.getLogs(ETHfilterBurnsLastMonth);
-        const ETHburnsLastMonthArrayFetched = ETHlogsBurnLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
-          }
-          return container;
-        });
-        setETHBurnsLastMonthArray(ETHburnsLastMonthArrayFetched);
-
-        let USDfilterMintsLastMonth: any = LUSDwrapper.filters.Minted();
-        USDfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        USDfilterMintsLastMonth.toBlock = 'latest';
-        let USDlogsMintLastMonth = await library.getLogs(USDfilterMintsLastMonth);
-        const USDmintsLastMonthArrayFetched = USDlogsMintLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
-          }
-          return container;
-        });
-        setUSDMintsLastMonthArray(USDmintsLastMonthArrayFetched);
-
-        let USDfilterBurnsLastMonth: any = LUSDwrapper.filters.Burned();
-        USDfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        USDfilterBurnsLastMonth.toBlock = 'latest';
-        let USDlogsBurnLastMonth = await library.getLogs(USDfilterBurnsLastMonth);
-        const USDburnsLastMonthArrayFetched = USDlogsBurnLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
-          }
-          return container;
-        });
-        setUSDBurnsLastMonthArray(USDburnsLastMonthArrayFetched);
 
         // fetch balances & wrapper contract data
         const [
@@ -312,7 +229,7 @@ const HomePage = () => {
         setLoadingMessage('');
 
       } catch (error) {
-        setErrorMessage('Could not connect to Web3 wallet.');
+        setErrorMessage('Could not fetch contract data.');
         disconnectWallet();
         // stop displaying loading overlay
         setLoadingMessage('');
@@ -321,10 +238,8 @@ const HomePage = () => {
   };
 
   const disconnectWallet = () => {
-    if (web3Modal) {
-      web3Modal.clearCachedProvider();
-      setCurrentProvider({});
-      setCurrentLibrary(undefined);
+      setWalletType('');
+      setCurrentProvider(undefined);
       setCurrentAccount("");
       setCurrentChainId(0);
       setUserBalances({
@@ -355,21 +270,22 @@ const HomePage = () => {
       });
       setInputValue("0");
       setOutputValue("0");
-    }
+
   }
 
   const toggleNetwork = async (newChainId: number) => {
-    if (currentLibrary) {
-      if (newChainId == 10 && currentLibrary?.provider.request) {
+
+    if (currentProvider) {
+      if (newChainId == 10 && currentProvider?.provider.request) {
         try {
-          await currentLibrary?.provider?.request({
+          await currentProvider?.provider?.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0xa' }]
           });
         } catch (err: any) {
           if (err.code === 4902) {
             try {
-              await currentLibrary?.provider?.request({
+              await currentProvider?.provider?.request({
                 method: "wallet_addEthereumChain",
                 params: [
                   {
@@ -386,16 +302,16 @@ const HomePage = () => {
             }
           }
         }
-      } else if (newChainId == 1 && currentLibrary?.provider.request) {
+      } else if (newChainId == 1 && currentProvider?.provider.request) {
         try {
-          await currentLibrary?.provider?.request({
+          await currentProvider?.provider?.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0x1' }]
           });
         } catch (err: any) {
           if (err.code === 4902) {
             try {
-              await currentLibrary?.provider?.request({
+              await currentProvider?.provider?.request({
                 method: "wallet_addEthereumChain",
                 params: [
                   {
@@ -413,7 +329,7 @@ const HomePage = () => {
           }
         }
       }
-      await connectWallet();
+      await connectWallet(walletType);
     } else {
       setCurrentChainId(newChainId);
     }
@@ -511,29 +427,29 @@ const HomePage = () => {
 
   const getUserBalancesAndApprovals = async (account: string) => {
 
-    let network = await currentLibrary?.getNetwork();
+    let network = await currentProvider?.getNetwork();
     let inputChainId = network?.chainId;
 
     // instantiate contracts
     let SETH, WETH, SUSD, LUSD, EtherWrapper, LUSDwrapper;
     if (inputChainId == 1) { // Ethereum L1
-      SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary);
-      WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary);
-      SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentLibrary);
-      LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary);
-      EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary);
-      LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary);
+      SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentProvider);
+      WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentProvider);
+      SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentProvider);
+      LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentProvider);
+      EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentProvider);
+      LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider);
     } else if (inputChainId == 10) { // Optimism
-      SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentLibrary);
-      WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentLibrary);
-      SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentLibrary);
-      LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentLibrary);
-      EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentLibrary);
-      LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary);
+      SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentProvider);
+      WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentProvider);
+      SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentProvider);
+      LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentProvider);
+      EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentProvider);
+      LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider);
     }
 
     // fetch balances & wrapper contract data
-
+    try {
     const [
       WETHBalanceFetched,
       SETHBalanceFetched,
@@ -585,72 +501,90 @@ const HomePage = () => {
       LUSDreserves: utils.formatEther(LUSDreservesFetched),
       USDcapacity: utils.formatEther(USDcapacityFetched)
     });
+    } catch {
+      setErrorMessage('Could not update user balances');
+    }
   }
 
   const sendApprovalTransaction = async () => {
-    if (currentChainId == 1) { // Ethereum L1
+
+    let network = await currentProvider?.getNetwork();
+    let inputChainId = network?.chainId;
+
+    // instantiate contracts
+    let SETH, WETH, SUSD, LUSD;
+    if (inputChainId == 1) { // Ethereum L1
+      SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentProvider?.getSigner());
+      WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentProvider?.getSigner());
+      SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentProvider?.getSigner());
+      LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentProvider?.getSigner());
+    } else if (inputChainId == 10) { // Optimism
+      SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentProvider?.getSigner());
+      WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentProvider?.getSigner());
+      SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentProvider?.getSigner());
+      LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentProvider?.getSigner());
+    }
+
+    if (inputChainId == 1) { // Ethereum L1
       if (inputCurrency == 'WETH') {
-        let WETH = new ethers.Contract(ADDRESSES.ETHEREUM.WETH, ABIs.WETH, currentLibrary?.getSigner());
-        await sendTransaction(WETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
+        await sendTransaction(WETH?.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sETH') {
-        let SETH = new ethers.Contract(ADDRESSES.ETHEREUM.SETH, ABIs.SETH, currentLibrary?.getSigner());
-        await sendTransaction(SETH.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
+        await sendTransaction(SETH?.approve(ADDRESSES.ETHEREUM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'LUSD') {
-        let LUSD = new ethers.Contract(ADDRESSES.ETHEREUM.LUSD, ABIs.LUSD, currentLibrary?.getSigner());
-        await sendTransaction(LUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
+        await sendTransaction(LUSD?.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sUSD') {
-        let SUSD = new ethers.Contract(ADDRESSES.ETHEREUM.SUSD, ABIs.SUSD, currentLibrary?.getSigner());
-        await sendTransaction(SUSD.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
+        await sendTransaction(SUSD?.approve(ADDRESSES.ETHEREUM.LUSDwrapper, constants.MaxUint256));
       }
-    } else if (currentChainId == 10) { // Optimism
+    } else if (inputChainId == 10) { // Optimism
       if (inputCurrency == 'WETH') {
-        let WETH = new ethers.Contract(ADDRESSES.OPTIMISM.WETH, ABIs.WETH, currentLibrary?.getSigner());
-        await sendTransaction(WETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
+        await sendTransaction(WETH?.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sETH') {
-        let SETH = new ethers.Contract(ADDRESSES.OPTIMISM.SETH, ABIs.SETH, currentLibrary?.getSigner());
-        await sendTransaction(SETH.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
+        await sendTransaction(SETH?.approve(ADDRESSES.OPTIMISM.ETHwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'LUSD') {
-        let LUSD = new ethers.Contract(ADDRESSES.OPTIMISM.LUSD, ABIs.LUSD, currentLibrary?.getSigner());
-        await sendTransaction(LUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
+        await sendTransaction(LUSD?.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
       } else if (inputCurrency == 'sUSD') {
-        let SUSD = new ethers.Contract(ADDRESSES.OPTIMISM.SUSD, ABIs.SUSD, currentLibrary?.getSigner());
-        await sendTransaction(SUSD.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
+        await sendTransaction(SUSD?.approve(ADDRESSES.OPTIMISM.LUSDwrapper, constants.MaxUint256));
       }
     }
   }
 
   const sendSwapTransaction = async () => {
-    if (currentChainId == 1) { // Ethereum L1
+
+    let network = await currentProvider?.getNetwork();
+    let inputChainId = network?.chainId;
+
+    // instantiate contracts
+    let EtherWrapper, LUSDwrapper;
+    if (inputChainId == 1) { // Ethereum L1
+      EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentProvider?.getSigner());
+      LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
+    } else if (inputChainId == 10) { // Optimism
+      EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
+      LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
+    }
+
+    if (inputChainId == 1) { // Ethereum L1
       if (inputCurrency == 'WETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
-        await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
+        await sendTransaction(EtherWrapper?.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let NativeEtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
-        await sendTransaction(NativeEtherWrapper.burn(utils.parseEther(inputValue)));
+        await sendTransaction(EtherWrapper?.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
-        await sendTransaction(LUSDwrapper.mint(utils.parseEther(inputValue)));
+        await sendTransaction(LUSDwrapper?.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
-        await sendTransaction(LUSDwrapper.burn(utils.parseEther(inputValue)));
+        await sendTransaction(LUSDwrapper?.burn(utils.parseEther(inputValue)));
       }
-    } else if (currentChainId == 10) { // Optimism
+    } else if (inputChainId == 10) { // Optimism
       if (inputCurrency == 'WETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
-        await sendTransaction(EtherWrapper.mint(utils.parseEther(inputValue)));
+        await sendTransaction(EtherWrapper?.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sETH') {
-        let EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.ETHwrapper, currentLibrary?.getSigner());
-        await sendTransaction(EtherWrapper.burn(utils.parseEther(inputValue)));
+        await sendTransaction(EtherWrapper?.burn(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'LUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
-        await sendTransaction(LUSDwrapper.mint(utils.parseEther(inputValue)));
+        await sendTransaction(LUSDwrapper?.mint(utils.parseEther(inputValue)));
       } else if (inputCurrency == 'sUSD') {
-        let LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentLibrary?.getSigner());
-        await sendTransaction(LUSDwrapper.burn(utils.parseEther(inputValue)));
+        await sendTransaction(LUSDwrapper?.burn(utils.parseEther(inputValue)));
       }
     }
   }
-
 
   const sendTransaction = async (transaction: Promise<ContractTransaction>) => {
 
@@ -676,14 +610,106 @@ const HomePage = () => {
     }
   }
 
+  const loadTVLdata = async() => {
+    if(currentProvider) {
+      setLoadingMessage('TVL data loading...');
+
+      let network = await currentProvider.getNetwork();
+      let inputChainId = network?.chainId;
+  
+      // instantiate contracts
+      let EtherWrapper, LUSDwrapper;
+      if (inputChainId == 1) { // Ethereum L1
+        EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentProvider);
+        LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider);
+      } else if (inputChainId == 10) { // Optimism
+        EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentProvider);
+        LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider);
+      }
+
+      try {
+        // extract TVL data from past mint/burn wrapper contract events
+
+        const latestBlockNumberFetched = await currentProvider.getBlockNumber();
+        setLatestBlockNumber(latestBlockNumberFetched);
+        const blocksInADay = Math.round((60 * 60 * 24) / 13);
+        const blocksInAMonth = blocksInADay * 30;
+
+        let ETHfilterMintsLastMonth: any = EtherWrapper?.filters.Minted();
+        ETHfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        ETHfilterMintsLastMonth.toBlock = 'latest';
+        let ETHlogsMintLastMonth = await currentProvider.getLogs(ETHfilterMintsLastMonth);
+        const ETHmintsLastMonthArrayFetched = ETHlogsMintLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+          }
+          return container;
+        });
+        setETHMintsLastMonthArray(ETHmintsLastMonthArrayFetched);
+
+        let ETHfilterBurnsLastMonth: any = EtherWrapper?.filters.Burned();
+        ETHfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        ETHfilterBurnsLastMonth.toBlock = 'latest';
+        let ETHlogsBurnLastMonth = await currentProvider.getLogs(ETHfilterBurnsLastMonth);
+        const ETHburnsLastMonthArrayFetched = ETHlogsBurnLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+          }
+          return container;
+        });
+        setETHBurnsLastMonthArray(ETHburnsLastMonthArrayFetched);
+
+        let USDfilterMintsLastMonth: any = LUSDwrapper?.filters.Minted();
+        USDfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        USDfilterMintsLastMonth.toBlock = 'latest';
+        let USDlogsMintLastMonth = await currentProvider.getLogs(USDfilterMintsLastMonth);
+        const USDmintsLastMonthArrayFetched = USDlogsMintLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+          }
+          return container;
+        });
+        setUSDMintsLastMonthArray(USDmintsLastMonthArrayFetched);
+
+        let USDfilterBurnsLastMonth: any = LUSDwrapper?.filters.Burned();
+        USDfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
+        USDfilterBurnsLastMonth.toBlock = 'latest';
+        let USDlogsBurnLastMonth = await currentProvider.getLogs(USDfilterBurnsLastMonth);
+        const USDburnsLastMonthArrayFetched = USDlogsBurnLastMonth.map((el) => {
+          const container = {
+            blockNumber: el.blockNumber,
+            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+          }
+          return container;
+        });
+        setUSDBurnsLastMonthArray(USDburnsLastMonthArrayFetched);
+
+        // close loading screen and display TVL chart
+        setLoadingMessage('');
+        setShowTVLChartOverlay(true);
+
+      } catch {
+        setLoadingMessage('');
+        setErrorMessage('Could not fetch TVL data');
+      }
+    } else {
+      setErrorMessage('You must connect your wallet to see TVL data');
+    }
+  }
+
   useEffect(() => {
-    if (currentProvider?.on) {
+    if (currentProvider?.provider.on) {
 
       const handleAccountsChanged = async (accounts: string[]) => {
         console.log("accountsChanged", accounts);
-        if (accounts && accounts[0] && currentLibrary) {
+        if (accounts && accounts[0] && currentProvider) {
+          setLoadingMessage('Web3 data loading...');
           await getUserBalancesAndApprovals(accounts[0]);
           setCurrentAccount(accounts[0]);
+          setLoadingMessage('');
         } else {
           disconnectWallet();
         };
@@ -691,11 +717,23 @@ const HomePage = () => {
 
       const handleChainChanged = async (_hexChainId: string) => {
         console.log("chainChanged", _hexChainId);
-        if (currentLibrary) { // do not trigger if wallet is disconnected
+        if (currentProvider) { // do not trigger if wallet is disconnected
           if (_hexChainId == '0x1') {
-            await toggleNetwork(1).catch(console.error);
+            try {
+            setLoadingMessage('Web3 data loading...');
+            await toggleNetwork(1);
+            setLoadingMessage('');
+            } catch {
+              setErrorMessage("Could not fetch Web3 data");
+            }
           } else if (_hexChainId == '0xa') {
-            await toggleNetwork(10).catch(console.error);
+            try {
+            setLoadingMessage('Web3 data loading...');
+            await toggleNetwork(10);
+            setLoadingMessage('');
+            } catch {
+              setErrorMessage("Could not fetch Web3 data");
+            }
           } else if (_hexChainId != '0xa' && _hexChainId != '0x1') {
             setErrorMessage("Network not supported, please connect to the Ethereum Mainnet or the Optimism Mainnet.");
             disconnectWallet();
@@ -703,8 +741,8 @@ const HomePage = () => {
         }
       };
 
-      currentProvider.on("accountsChanged", handleAccountsChanged);
-      currentProvider.on("chainChanged", handleChainChanged);
+      currentProvider.provider.on("accountsChanged", handleAccountsChanged);
+      currentProvider.provider.on("chainChanged", handleChainChanged);
 
       return () => {
         if (currentProvider.removeListener) {
@@ -713,7 +751,7 @@ const HomePage = () => {
         }
       };
     }
-  }, [currentProvider]);
+  }, [currentProvider?.provider]);
 
   return (
     <>
@@ -736,7 +774,7 @@ const HomePage = () => {
             chainId={currentChainId}
           />
           <Content
-            onTVLClick={() => setShowTVLChartOverlay(true)}
+            onTVLClick={() => loadTVLdata()}
             userBalances={userBalances}
             userApprovals={userApprovals}
             ETHwrapperData={ETHwrapperData}
@@ -771,6 +809,8 @@ const HomePage = () => {
           USDmintsLastMonthArray={USDmintsLastMonthArray}
           USDburnsLastMonthArray={USDburnsLastMonthArray}
           latestBlockNumber={latestBlockNumber}
+          setErrorMessage={setErrorMessage}
+          setLoadingMessage={setLoadingMessage}
         />
         <StyledLoadingOverlay
           display={loadingMessage.length > 0}

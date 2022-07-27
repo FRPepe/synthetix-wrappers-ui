@@ -30,9 +30,9 @@ const ErrorMessage: FC<LoadingWeb3Props> = ({ display, errorMessage, setErrorMes
                 </Button>
               </div>
             </CrossContainer>
-            <div style={{ textAlign: "center" }}>
+            <MessageContainer>
               <span>{errorMessage}</span>
-            </div>
+            </MessageContainer>
           </Container>
         </Overlay>
       )}
@@ -95,6 +95,10 @@ const CrossContainer = styled.div`
   display: flex;
   flex-direction: row;
   margin-bottom: 10px;
+`;
+
+const MessageContainer = styled.div`
+  text-align: center;
 `;
 
 export default ErrorMessage;
