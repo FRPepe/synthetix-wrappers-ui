@@ -104,7 +104,7 @@ const AnswerContainer = styled.div<{ active?: boolean }>`
     font-family: 'GT America Mono';
     font-style: normal;
     font-weight: 300;
-    font-size: 10px;
+    font-size: 14px;
     line-height: 150%;
     color: #FFFFFF;
   }
@@ -144,8 +144,8 @@ const TextContainer = styled.div`
     font-family: 'GT America Mono';
     font-style: normal;
     font-weight: 400;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 14px;
+    line-height: 14px;
     color: #828295;
   }
 
@@ -154,7 +154,7 @@ const TextContainer = styled.div`
     font-family: 'GT America Mono';
     font-style: normal;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 21px;
     color: #FFFFFF;
   }
