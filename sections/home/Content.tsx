@@ -8,24 +8,57 @@ import LinkArrow from "../../assets/utils/link-arrow.svg";
 import Arrows from "../../assets/utils/arrows.svg";
 import DownArrowSmall from "../../assets/utils/down-arrow-small.svg";
 import BlueInfo from "../../assets/utils/blue-info.svg";
+import WarningSign from "../../assets/utils/warning-sign.svg";
 import LUSDLogo from "../../assets/synths/sLUSD.svg";
 import sUSDLogo from "../../assets/synths/sUSD.png";
 import sETHLogo from "../../assets/synths/sETH.png";
 import WETHLogo from "../../assets/synths/weth.png";
+import ETHLogo from "../../assets/logos/ethereum.svg";
+
+interface UserBalances {
+  ETH: string;
+  WETH: string;
+  sETH: string;
+  LUSD: string;
+  sUSD: string;
+}
+
+interface UserApprovals {
+  WETH: string;
+  sETH: string;
+  LUSD: string;
+  sUSD: string;
+}
+
+interface ETHwrapperData {
+  ETHmintFeeRate: string;
+  ETHburnFeeRate: string;
+  maxETH: string;
+  WETHreserves: string;
+  ETHcapacity: string;
+}
+
+interface USDwrapperData {
+  USDmintFeeRate: string;
+  USDburnFeeRate: string;
+  maxUSD: string;
+  LUSDreserves: string;
+  USDcapacity: string;
+}
 
 type WrapprProps = {
   onTVLClick: () => void;
-  handleInputValue: (e: any) => void;
-  handleOutputValue: (e: any) => void;
+  handleInputValue: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleOutputValue: (e: React.ChangeEvent<HTMLInputElement>) => void;
   toggleMintOrBurn: () => void;
   handleMaxButton: () => void;
   handleCurrency: (currency: string) => void;
   sendApprovalTransaction: () => void;
   sendSwapTransaction: () => void;
-  userBalances: any;
-  userApprovals: any;
-  ETHwrapperData: any;
-  USDwrapperData: any;
+  userBalances: UserBalances;
+  userApprovals: UserApprovals;
+  ETHwrapperData: ETHwrapperData;
+  USDwrapperData: USDwrapperData;
   isMinting: boolean;
   inputValue: string;
   outputValue: string;
@@ -74,7 +107,7 @@ const Wrappr: FC<WrapprProps> = ({
   useEffect(() => {
     if (parseFloat(inputValue) == 0 || inputValue.length == 0) {
       setSwapButtonText('Enter an amount');
-    } else if (parseFloat(inputValue) > 0 && parseFloat(inputValue) > parseFloat(userBalances[inputCurrency])) {
+    } else if (parseFloat(inputValue) > 0 && parseFloat(inputValue) > parseFloat(userBalances[inputCurrency as keyof typeof userBalances])) {
       setSwapButtonText('Insufficient balance');
     } else if (inputCurrency == 'WETH' && parseFloat(inputValue) > parseFloat(ETHwrapperData.ETHcapacity)) {
       setSwapButtonText('Insufficient sETH minting capacity');
@@ -85,7 +118,9 @@ const Wrappr: FC<WrapprProps> = ({
     } else if (inputCurrency == 'sUSD' && parseFloat(inputValue) > parseFloat(USDwrapperData.LUSDreserves)) {
       setSwapButtonText('Insufficient LUSD reserves');
     } else {
-      if (userApprovals[inputCurrency] > parseFloat(inputValue)) {
+      if (inputCurrency == 'ETH') {
+        setSwapButtonText('Wrap ETH into WETH');
+      } else if (parseFloat(userApprovals[inputCurrency as keyof typeof userApprovals]) > parseFloat(inputValue)) {
         setSwapButtonText('Swap');
       } else {
         setSwapButtonText(`Allow the Wrapper to use your ${inputCurrency}`);
@@ -96,7 +131,7 @@ const Wrappr: FC<WrapprProps> = ({
   const handleTransaction = async () => {
     if (swapButtonText == `Allow the Wrapper to use your ${inputCurrency}`) {
       await sendApprovalTransaction();
-    } else if (swapButtonText == 'Swap') {
+    } else if (swapButtonText == 'Swap' || swapButtonText == 'Wrap ETH into WETH') {
       await sendSwapTransaction();
     }
   }
@@ -133,7 +168,7 @@ const Wrappr: FC<WrapprProps> = ({
         <BlackContainer>
           <BlackContainerRow>
             <span className="big">Wrapping</span>
-            <span>Balance: {parseFloat(userBalances[inputCurrency]).toFixed(2)}</span>
+            <span>Balance: {parseFloat(userBalances[inputCurrency as keyof typeof userBalances]).toFixed(2)}</span>
             <MaxButton
               onClick={() => handleMaxButton()}
             >
@@ -141,7 +176,7 @@ const Wrappr: FC<WrapprProps> = ({
             </MaxButton>
           </BlackContainerRow>
           <BlackContainerRow>
-            <CurrencySelectoDropdown
+            <CurrencySelectorDropdown
               active={isMinting}
             >
               <CurrencySelectorButton>
@@ -151,6 +186,9 @@ const Wrappr: FC<WrapprProps> = ({
                   </div>
                   <div style={{ marginTop: "4px", display: inputCurrency == 'WETH' ? 'initial' : 'none' }} >
                     <img src={WETHLogo.src} alt="WETH-logo" style={{ width: "24px", height: "24px" }} />
+                  </div>
+                  <div style={{ marginTop: "4px", display: inputCurrency == 'ETH' ? 'initial' : 'none' }} >
+                    <img src={ETHLogo.src} alt="ETH-logo" style={{ width: "24px", height: "24px" }} />
                   </div>
                   <div style={{ marginTop: "2px", display: inputCurrency == 'sETH' ? 'initial' : 'none' }} >
                     <img src={sETHLogo.src} alt="sETH-logo" style={{ width: "27px", height: "27px", marginTop: "2px" }} />
@@ -175,6 +213,12 @@ const Wrappr: FC<WrapprProps> = ({
                   <img src={WETHLogo.src} alt="WETH-logo" style={{ width: "24px", height: "24px" }} />
                   <span>WETH</span>
                 </CurrencyContainer>
+                <CurrencyContainer
+                  onClick={() => handleCurrency("ETH")}
+                >
+                  <img src={ETHLogo.src} alt="ETH-logo" style={{ width: "24px", height: "24px" }} />
+                  <span>ETH</span>
+                </CurrencyContainer>
               </CurrencySelectorContainerMint>
               <CurrencySelectorContainerBurn>
                 <CurrencyContainer
@@ -190,8 +234,8 @@ const Wrappr: FC<WrapprProps> = ({
                   <span>sETH</span>
                 </CurrencyContainer>
               </CurrencySelectorContainerBurn>
-            </CurrencySelectoDropdown>
-            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={inputValue} onChange={(e: any) => handleInputValue(e)} maxLength={11} />
+            </CurrencySelectorDropdown>
+            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={inputValue} onChange={(e) => handleInputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <BlackContainerRow>
             <span style={{ display: inputCurrency == 'WETH' ? 'initial' : 'none' }}>Max mintable: {parseFloat(ETHwrapperData.ETHcapacity).toFixed(2)}Ξ</span>
@@ -218,7 +262,7 @@ const Wrappr: FC<WrapprProps> = ({
         <BlackContainer>
           <BlackContainerRow>
             <span>Into</span>
-            <span>Balance: {parseFloat(userBalances[outputCurrency]).toFixed(2)}</span>
+            <span>Balance: {parseFloat(userBalances[outputCurrency as keyof typeof userBalances]).toFixed(2)}</span>
           </BlackContainerRow>
           <BlackContainerRow>
             <StyledCurrencyContainer2>
@@ -236,24 +280,28 @@ const Wrappr: FC<WrapprProps> = ({
               </div>
               <span>{outputCurrency}</span>
             </StyledCurrencyContainer2>
-            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={outputValue} onChange={(e: any) => handleOutputValue(e)} maxLength={11} />
+            <NumericInput type="text" placeholder="0.0" pattern="^[0-9]*[.,]?[0-9]*$" value={outputValue} onChange={(e) => handleOutputValue(e)} maxLength={11} />
           </BlackContainerRow>
           <StyledBlackContainerRow>
             <span style={{ display: inputCurrency == 'WETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHmintFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'sETH' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(ETHwrapperData.ETHburnFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'LUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDmintFeeRate) * 100}%`}</span>
             <span style={{ display: inputCurrency == 'sUSD' ? 'initial' : 'none' }}>Fee rate: {`${parseFloat(USDwrapperData.USDburnFeeRate) * 100}%`}</span>
-            <BlueInfoButton>
+            <BlueInfoButton hidden={inputCurrency == 'ETH'}>
               <Image className="tooltip" src={BlueInfo} alt="info-icon" priority={true} />
               <TooltipBox>
-                <span>The fee rate is decided by the Grants Council</span>
+                <span>The fee rate is decided by the Spartan Council</span>
                 <a href="https://docs.synthetix.io/integrations/ether-wrapper/" target="_blank">Learn More</a>
               </TooltipBox>
             </BlueInfoButton>
           </StyledBlackContainerRow>
         </BlackContainer>
+        <WarningContainer active={inputCurrency == 'ETH'}>
+          <img src={WarningSign.src} alt="warning-icon" style={{ width: "16px", height: "16px", marginRight: "6px" }}/>
+          <span>ETH must first be wrapped into WETH</span>
+        </WarningContainer>
         <SwapButton
-          active={swapButtonText == `Allow the Wrapper to use your ${inputCurrency}` || swapButtonText == 'Swap'}
+          active={swapButtonText == `Allow the Wrapper to use your ${inputCurrency}` || swapButtonText == 'Swap' || swapButtonText == 'Wrap ETH into WETH'}
           onClick={() => handleTransaction()}
         >
           <span>{swapButtonText}</span>
@@ -549,7 +597,7 @@ const CurrencySelectorContainerMint = styled.div`
   padding: 0px;
 
   /* Basic style */
-  height: 80px;
+  height: 120px;
   width: 120px;
 
   /* Background */
@@ -587,7 +635,7 @@ const CurrencySelectorContainerBurn = styled.div`
   box-shadow: 0px 14px 14px rgba(0, 0, 0, 0.25);
 `;
 
-const CurrencySelectoDropdown = styled.div<{ active?: boolean }>`
+const CurrencySelectorDropdown = styled.div<{ active?: boolean }>`
   flex-direction: column;
   gap: 8px;
 
@@ -689,6 +737,7 @@ const ArrowButton = styled.button`
 const SwapButton = styled(Button) <{ active?: boolean }>`
   width: 464px;
   height: 40px;
+  margin-bottom: 5px;
 
   background: rgba(86, 86, 99, 0.6);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
@@ -875,7 +924,7 @@ const TooltipBox = styled.div`
   }
 `;
 
-const BlueInfoButton = styled.button`
+const BlueInfoButton = styled.button<{ hidden?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -903,6 +952,31 @@ const BlueInfoButton = styled.button`
   &:active {
     box-shadow: inset -1px -1px 1px rgba(255, 255, 255, 0.15);
   }
+
+  ${(props) =>
+    props.hidden &&
+    css`
+      display: none;
+    `}
+`;
+
+const WarningContainer = styled.div<{ active?: boolean }>`
+display: none;
+
+span {
+  font-family: "GT America Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 20px;
+  text-align: center;
+  color: #FF8000;
+}
+${(props) =>
+  props.active &&
+  css`
+    display: flex;
+  `}
 `;
 
 export default Wrappr;

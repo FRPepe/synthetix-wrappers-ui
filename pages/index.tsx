@@ -17,7 +17,11 @@ import TVLChart from "../sections/home/TVLChartOverlay";
 import LoadingOverlay from "../sections/home/LoadingOverlay";
 import ErrorMessage from "../sections/home/ErrorMessage";
 
-declare var window: any;
+declare global {
+  interface Window {
+      ethereum?: import('ethers').providers.ExternalProvider;
+  }
+}
 
 const HomePage = () => {
   // UI
@@ -37,7 +41,7 @@ const HomePage = () => {
 
   // wallet input
   const [walletType, setWalletType] = useState<string>('');
-  const [originalProvider, setOriginalProvider] = useState<any>({});
+  const [originalProvider, setOriginalProvider] = useState<ethers.providers.Provider>();
   const [currentProvider, setCurrentProvider] = useState<ethers.providers.Web3Provider>();
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [currentChainId, setCurrentChainId] = useState<number>(0);
@@ -45,6 +49,7 @@ const HomePage = () => {
   // user balances & contract data
   const [userBalances, setUserBalances] = useState(
     {
+      ETH: "0",
       WETH: "0",
       sETH: "0",
       LUSD: "0",
@@ -101,7 +106,7 @@ const HomePage = () => {
     setWalletType(providerInput);
     let originalProvider;
     let provider;
-    if(providerInput == 'metamask') {
+    if(providerInput == 'metamask' && window.ethereum) {
       originalProvider = window.ethereum;
       try {
         provider = new ethers.providers.Web3Provider(originalProvider, "any");
@@ -133,7 +138,7 @@ const HomePage = () => {
         // initiate Web3 and fetch wallet data
         const accounts = await provider.listAccounts();
         const network = await provider.getNetwork();
-        setOriginalProvider(originalProvider);
+        setOriginalProvider(originalProvider as ethers.providers.Provider);
         setCurrentProvider(provider);
         if (accounts) setCurrentAccount(accounts[0]);
         setCurrentChainId(network.chainId);
@@ -164,6 +169,7 @@ const HomePage = () => {
 
         // fetch balances & wrapper contract data
         const [
+          ETHBalanceFetched,
           WETHBalanceFetched,
           SETHBalanceFetched,
           LUSDBalanceFetched,
@@ -184,6 +190,7 @@ const HomePage = () => {
           USDcapacityFetched
         ] = await Promise.all(
           [
+            await provider.getBalance(accounts[0]),
             await WETH?.balanceOf(accounts[0]),
             await SETH?.balanceOf(accounts[0]),
             await LUSD?.balanceOf(accounts[0]),
@@ -205,6 +212,7 @@ const HomePage = () => {
           ]
         );
         setUserBalances({
+          ETH: utils.formatEther(ETHBalanceFetched),
           WETH: utils.formatEther(WETHBalanceFetched),
           sETH: utils.formatEther(SETHBalanceFetched),
           LUSD: utils.formatEther(LUSDBalanceFetched),
@@ -249,6 +257,7 @@ const HomePage = () => {
       setCurrentAccount("");
       setCurrentChainId(0);
       setUserBalances({
+        ETH: "0",
         WETH: "0",
         sETH: "0",
         LUSD: "0",
@@ -279,6 +288,12 @@ const HomePage = () => {
 
   }
 
+  interface ProviderRpcError extends Error {
+    code: number;
+    message: string;
+    data?: unknown;
+  }
+
   const toggleNetwork = async (newChainId: number) => {
 
     if (currentProvider) {
@@ -288,8 +303,8 @@ const HomePage = () => {
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0xa' }]
           });
-        } catch (err: any) {
-          if (err.code === 4902) {
+        } catch (err) {
+          if ((err as ProviderRpcError).code === 4902) {
             try {
               await currentProvider?.provider?.request({
                 method: "wallet_addEthereumChain",
@@ -314,8 +329,8 @@ const HomePage = () => {
             method: "wallet_switchEthereumChain",
             params: [{ chainId: '0x1' }]
           });
-        } catch (err: any) {
-          if (err.code === 4902) {
+        } catch (err) {
+          if ((err as ProviderRpcError).code === 4902) {
             try {
               await currentProvider?.provider?.request({
                 method: "wallet_addEthereumChain",
@@ -360,7 +375,7 @@ const HomePage = () => {
     }
   }
 
-  const handleInputValue = (e: any) => {
+  const handleInputValue = (e: React.ChangeEvent<HTMLInputElement>) => {
     const regex = /^[0-9]*[.,]?[0-9]*$/;
     if (e.target.value === '') {
       setInputValue("");
@@ -372,7 +387,7 @@ const HomePage = () => {
     }
   }
 
-  const handleOutputValue = (e: any) => {
+  const handleOutputValue = (e: React.ChangeEvent<HTMLInputElement>) => {
     const regex = /^[0-9]*[.,]?[0-9]*$/;
     if (e.target.value === '') {
       setInputValue("");
@@ -428,6 +443,8 @@ const HomePage = () => {
       setOutputCurrency('WETH');
     } else if (currency == 'sUSD') {
       setOutputCurrency('LUSD');
+    } else if (currency == 'ETH') {
+      setOutputCurrency('WETH');
     }
   }
 
@@ -457,6 +474,7 @@ const HomePage = () => {
     // fetch balances & wrapper contract data
     try {
     const [
+      ETHBalanceFetched,
       WETHBalanceFetched,
       SETHBalanceFetched,
       LUSDBalanceFetched,
@@ -471,6 +489,7 @@ const HomePage = () => {
       USDcapacityFetched
     ] = await Promise.all(
       [
+        await currentProvider?.getBalance(account),
         await WETH?.balanceOf(account),
         await SETH?.balanceOf(account),
         await LUSD?.balanceOf(account),
@@ -486,6 +505,7 @@ const HomePage = () => {
       ]
     );
     setUserBalances({
+      ETH: ETHBalanceFetched? utils.formatEther(ETHBalanceFetched) : "0",
       WETH: utils.formatEther(WETHBalanceFetched),
       sETH: utils.formatEther(SETHBalanceFetched),
       LUSD: utils.formatEther(LUSDBalanceFetched),
@@ -555,40 +575,32 @@ const HomePage = () => {
   }
 
   const sendSwapTransaction = async () => {
-
     let network = await currentProvider?.getNetwork();
     let inputChainId = network?.chainId;
 
     // instantiate contracts
-    let EtherWrapper, LUSDwrapper;
+    let EtherWrapper, LUSDwrapper, WETHcontract;
     if (inputChainId == 1) { // Ethereum L1
       EtherWrapper = new ethers.Contract(ADDRESSES.ETHEREUM.ETHwrapper, ABIs.ETHwrapper, currentProvider?.getSigner());
       LUSDwrapper = new ethers.Contract(ADDRESSES.ETHEREUM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
+      WETHcontract = new ethers.Contract(ADDRESSES.ETHEREUM.WETHcontract, ABIs.WETHcontract, currentProvider?.getSigner());
     } else if (inputChainId == 10) { // Optimism
       EtherWrapper = new ethers.Contract(ADDRESSES.OPTIMISM.ETHwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
       LUSDwrapper = new ethers.Contract(ADDRESSES.OPTIMISM.LUSDwrapper, ABIs.LUSDwrapper, currentProvider?.getSigner());
+      WETHcontract = new ethers.Contract(ADDRESSES.OPTIMISM.WETHcontract, ABIs.WETHcontract, currentProvider?.getSigner());
     }
 
-    if (inputChainId == 1) { // Ethereum L1
-      if (inputCurrency == 'WETH') {
-        await sendTransaction(EtherWrapper?.mint(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'sETH') {
-        await sendTransaction(EtherWrapper?.burn(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'LUSD') {
-        await sendTransaction(LUSDwrapper?.mint(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'sUSD') {
-        await sendTransaction(LUSDwrapper?.burn(utils.parseEther(inputValue)));
-      }
-    } else if (inputChainId == 10) { // Optimism
-      if (inputCurrency == 'WETH') {
-        await sendTransaction(EtherWrapper?.mint(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'sETH') {
-        await sendTransaction(EtherWrapper?.burn(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'LUSD') {
-        await sendTransaction(LUSDwrapper?.mint(utils.parseEther(inputValue)));
-      } else if (inputCurrency == 'sUSD') {
-        await sendTransaction(LUSDwrapper?.burn(utils.parseEther(inputValue)));
-      }
+    if (inputCurrency == 'WETH') {
+      await sendTransaction(EtherWrapper?.mint(utils.parseEther(inputValue)));
+    } else if (inputCurrency == 'sETH') {
+      await sendTransaction(EtherWrapper?.burn(utils.parseEther(inputValue)));
+    } else if (inputCurrency == 'LUSD') {
+      await sendTransaction(LUSDwrapper?.mint(utils.parseEther(inputValue)));
+    } else if (inputCurrency == 'sUSD') {
+      await sendTransaction(LUSDwrapper?.burn(utils.parseEther(inputValue)));
+    } else if (inputCurrency == 'ETH') {
+      await sendTransaction(WETHcontract?.deposit({value: utils.parseEther(inputValue)}));
+      handleCurrency('WETH');
     }
   }
 
@@ -609,10 +621,12 @@ const HomePage = () => {
         setLoadingMessage('Transaction Reverted !');
       }
       await getUserBalancesAndApprovals(currentAccount);
-    } catch (err: any) {
+    } catch (err) {
       setLoadingMessage('');
       setExplorerLink('');
-      setErrorMessage(err.message);
+      let message;
+      err instanceof Error ? message = err.message : message = String(err);
+      setErrorMessage(message);
     }
   }
 
@@ -641,57 +655,53 @@ const HomePage = () => {
         const blocksInADay = Math.round((60 * 60 * 24) / 13);
         const blocksInAMonth = blocksInADay * 30;
 
-        let ETHfilterMintsLastMonth: any = EtherWrapper?.filters.Minted();
-        ETHfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        ETHfilterMintsLastMonth.toBlock = 'latest';
-        let ETHlogsMintLastMonth = await currentProvider.getLogs(ETHfilterMintsLastMonth);
-        const ETHmintsLastMonthArrayFetched = ETHlogsMintLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
-          }
-          return container;
-        });
-        setETHMintsLastMonthArray(ETHmintsLastMonthArrayFetched);
+        if(EtherWrapper) {
+          let ETHfilterMintsLastMonth = EtherWrapper.filters.Minted();
+          let ETHlogsMintLastMonth = await EtherWrapper.queryFilter(ETHfilterMintsLastMonth, latestBlockNumber - blocksInAMonth, 'latest');
+          const ETHmintsLastMonthArrayFetched = ETHlogsMintLastMonth.map((el) => {
+            const container = {
+              blockNumber: el.blockNumber,
+              value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+            }
+            return container;
+          });
+          setETHMintsLastMonthArray(ETHmintsLastMonthArrayFetched);
 
-        let ETHfilterBurnsLastMonth: any = EtherWrapper?.filters.Burned();
-        ETHfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        ETHfilterBurnsLastMonth.toBlock = 'latest';
-        let ETHlogsBurnLastMonth = await currentProvider.getLogs(ETHfilterBurnsLastMonth);
-        const ETHburnsLastMonthArrayFetched = ETHlogsBurnLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
-          }
-          return container;
-        });
-        setETHBurnsLastMonthArray(ETHburnsLastMonthArrayFetched);
+          let ETHfilterBurnsLastMonth = EtherWrapper.filters.Burned();
+          let ETHlogsBurnLastMonth = await EtherWrapper.queryFilter(ETHfilterBurnsLastMonth, latestBlockNumber - blocksInAMonth, 'latest');
+          const ETHburnsLastMonthArrayFetched = ETHlogsBurnLastMonth.map((el) => {
+            const container = {
+              blockNumber: el.blockNumber,
+              value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+            }
+            return container;
+          });
+          setETHBurnsLastMonthArray(ETHburnsLastMonthArrayFetched);
+        }
 
-        let USDfilterMintsLastMonth: any = LUSDwrapper?.filters.Minted();
-        USDfilterMintsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        USDfilterMintsLastMonth.toBlock = 'latest';
-        let USDlogsMintLastMonth = await currentProvider.getLogs(USDfilterMintsLastMonth);
-        const USDmintsLastMonthArrayFetched = USDlogsMintLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
-          }
-          return container;
-        });
-        setUSDMintsLastMonthArray(USDmintsLastMonthArrayFetched);
+        if(LUSDwrapper) {
+          let USDfilterMintsLastMonth = LUSDwrapper.filters.Minted();
+          let USDlogsMintLastMonth = await LUSDwrapper.queryFilter(USDfilterMintsLastMonth, latestBlockNumber - blocksInAMonth, 'latest');
+          const USDmintsLastMonthArrayFetched = USDlogsMintLastMonth.map((el) => {
+            const container = {
+              blockNumber: el.blockNumber,
+              value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[2]))
+            }
+            return container;
+          });
+          setUSDMintsLastMonthArray(USDmintsLastMonthArrayFetched);
 
-        let USDfilterBurnsLastMonth: any = LUSDwrapper?.filters.Burned();
-        USDfilterBurnsLastMonth.fromBlock = latestBlockNumber - blocksInAMonth;
-        USDfilterBurnsLastMonth.toBlock = 'latest';
-        let USDlogsBurnLastMonth = await currentProvider.getLogs(USDfilterBurnsLastMonth);
-        const USDburnsLastMonthArrayFetched = USDlogsBurnLastMonth.map((el) => {
-          const container = {
-            blockNumber: el.blockNumber,
-            value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
-          }
-          return container;
-        });
-        setUSDBurnsLastMonthArray(USDburnsLastMonthArrayFetched);
+          let USDfilterBurnsLastMonth = LUSDwrapper.filters.Burned();
+          let USDlogsBurnLastMonth = await LUSDwrapper.queryFilter(USDfilterBurnsLastMonth, latestBlockNumber - blocksInAMonth, 'latest');
+          const USDburnsLastMonthArrayFetched = USDlogsBurnLastMonth.map((el) => {
+            const container = {
+              blockNumber: el.blockNumber,
+              value: parseFloat(utils.formatEther(utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], el.data)[0]))
+            }
+            return container;
+          });
+          setUSDBurnsLastMonthArray(USDburnsLastMonthArrayFetched);
+        }
 
         // close loading screen and display TVL chart
         setLoadingMessage('');
@@ -707,7 +717,7 @@ const HomePage = () => {
   }
 
   useEffect(() => {
-    if (originalProvider.on) {
+    if (originalProvider?.on) {
 
       const handleAccountsChanged = async (accounts: string[]) => {
         console.log("accountsChanged", accounts);

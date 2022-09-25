@@ -15,49 +15,42 @@ const Content: FC = () => {
         logo: RocketLogo,
         category: 'GETTING STARTED',
         question: 'What is Wrappr?',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        answer: ['A wrapper functions as an AMM that is always willing to swap, e.g. 1 ETH to/from 1sETH.  This allows an alternative way of deploying capital into the Synthetix ecosystem.', <br/>, 'At the present time, there are lusd <> susd and eth <> seth wrappers.  For example, if you have 100 ETH and want to deploy that capital into Synthetix you could sell the ETH for stables, swap into sUSD and then trade at Kwenta or Lyra.', <br/>, 'However, those transactions may incur fees and slippage in ways that are not as efficient as possible.  A wrapper might allow the user to instead swap 100 ETH directly into 100 sETH.  A potentially more efficient and elegant solution depending on available liquidity in the wrappers.'],
         open: false
       },
       {
         logo: RocketLogo,
         category: 'GETTING STARTED',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        question: 'Why use a wrapper?',
+        answer: ['While many traders may wish to simply swap their stablecoin into sUSD to trade through the Synthetix ecosystem, some users may find it more simple or capital efficient to directly swap their other digital assets into synths and begin interacting this way.', <br/>, 'In addition, there have been periods where sUSD liquidity has fluctuated due to increased demand and wrappers can provide an alternative source of entry into the system.  Wrappers mostly help make synths "cheaper" to aquire.'],
         open: false
       },
       {
         logo: RocketLogo,
         category: 'GENERAL',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
-        open: true
-      },
-      {
-        logo: PictureLogo,
-        category: 'WRAP',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        question: 'Will I be able to "unwrap" my collateral?',
+        answer: ['Like virtually all aspects of DeFi, there are periodic liquidity constraints and times where one route may be unavailable.  For example, wrapped ETH is not "held" pending unwrapping for individual users.  So, if the wrapper has no liquidity left to swap sETH back to ETH, then a user may need to swap on a secondary AMM.', <br/>, 'There has generally always been consistent liquidity available on secondary markets near to peg for ETH and sETH, e.g. Curve.Fi and also Velodrome.Finance on Optimism.  As well as the ability to swap sETH to sUSD and then sUSD to USDC, DAI, USDT, etc.'],
         open: false
       },
       {
         logo: PictureLogo,
-        category: 'WRAP',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        category: 'FEES',
+        question: 'What are the fees for wrappers?',
+        answer: 'Mint/burn fees are configurable and Synthetix governance can and does change these fees based on market conditions. The UI will display the current fees applicable, which are always subject to change based on governance decisions.',
         open: false
       },
       {
         logo: PictureLogo,
-        category: 'UNWRAP',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        category: 'FEES',
+        question: 'Why would Synthetix governance change fees?',
+        answer: ['What is important to understand is that wrappers are an alternate source of entering/exiting positions in Synthetix and are often an efficient route for advanced users under certain market conditions. Fees are reasonable as these contracts are basically fixed price stableswap AMMs (like a Curve.Fi pool with A-factor set to infinity).', <br/>, 'Governance has in the past changed fees to capture arbitrage premium should a secondary synthetic market deviate from the intended peg. For example, if sETH is trading at 1.01 ETH, governance might set the fee to 90bp so it gets arbitraged down to 1.009 ETH - and then walk it down gradually so stakers earn profit from the premium on the way down.', <br/>, 'Other times in the past, governance has also changed mint/burn fees in different wrappers to direct arbitrage traders through one or the other. For instance, if the debt pool is very long ETH and synths are at a premium, governance might increase the mint fee on the LUSD wrapper and lower it on the ETH wrapper so people wrap ETH to arb instead of LUSD.', <br/>, 'Again, these are decisions made to generally provide options to users and create incentives to ensure a proper functioning marketplace for all Synthetix ecosystem users.'],
         open: false
       },
       {
         logo: PictureLogo,
-        category: 'UNWRAP',
-        question: 'Lorem Ipsum',
-        answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras at iaculis odio diam pretium risus. Ornare id eu ut sed. Sit convallis purus suspendisse purus praesent nec massa, pellentesque purus. Integer molestie tempus volutpat eget risus, in pellentesque dolor.',
+        category: 'FEES',
+        question: 'What part of Synthetix governance changes fees?',
+        answer: 'Fees are presently set by the Spartan Council.',
         open: false
       },
     ]

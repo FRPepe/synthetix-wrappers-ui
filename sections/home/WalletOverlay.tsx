@@ -22,7 +22,7 @@ const WalletOverlay: FC<WalletOverlayProps> = ({ display, onClose, onConnectWall
     setIsBrowser(true);
   }, []);
 
-  const handleOnClose = (e: any) => {
+  const handleOnClose = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     onClose();
   };

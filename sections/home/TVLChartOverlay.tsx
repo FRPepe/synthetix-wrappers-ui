@@ -341,7 +341,7 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 		setLoadingMessage('');
 	};
 
-	const handleOnClose = (e: any) => {
+	const handleOnClose = (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 		onClose();
 	};
@@ -402,7 +402,6 @@ const TVLChartOverlay: FC<TVLChartOverlayProps> = ({
 							<Column>
 								<StyledRow>
 									<h1>TOTAL VALUE LOCKED</h1>
-									<Image className="tooltip" alt="tooltip" src={WhiteInfo} priority={true} />
 								</StyledRow>
 								<span className="tvl">{tvl}</span>
 							</Column>
