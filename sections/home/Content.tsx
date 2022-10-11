@@ -347,7 +347,6 @@ const Container = styled.div`
   align-items: center;
   width: 100%;
   padding: 30px 40px 0px 40px;
-  overflow: auto;
 `;
 
 const ContainerRow = styled.div`
