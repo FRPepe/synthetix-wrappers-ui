@@ -846,7 +846,7 @@ const HomePage = () => {
 };
 
 const Home = styled.div<{ blur: boolean }>`
-  overflow: auto;
+overflow: auto;
   /* Make the background blur if the wallet overlay is displayed */
   ${(props) =>
     props.blur &&

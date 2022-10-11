@@ -347,6 +347,11 @@ const Container = styled.div`
   align-items: center;
   width: 100%;
   padding: 30px 40px 0px 40px;
+
+  @media only screen and (max-width: 700px) {
+    align-items: start;
+    padding: 30px 10px 0px 10px;
+  }
 `;
 
 const ContainerRow = styled.div`
